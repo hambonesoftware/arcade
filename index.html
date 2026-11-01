@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Hambone Arcade — original browser games, playful simulations, and curious creative experiments from Hambone Software.">
+  <meta property="og:title" content="Hambone Arcade — Play something unexpected">
+  <meta property="og:description" content="A little corner of the internet filled with games, physics toys, and strange experiments.">
+  <meta property="og:type" content="website">
+  <title>Hambone Arcade — Play Something Unexpected</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#games">Skip to games</a>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="#top" aria-label="Hambone Arcade home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 52 52" fill="none"><rect x="2" y="2" width="48" height="48" rx="16" fill="#ffc65a"/><path d="M13 29c0-6 5-10 11-10h4c6 0 11 4 11 10l1 5c.4 3-3 5-5 3l-6-5H23l-6 5c-2 2-5.4 0-5-3l1-5Z" fill="#12182c"/><path d="M20 23v10M15 28h10" stroke="#ffc65a" stroke-width="2.5" stroke-linecap="round"/><circle cx="33" cy="25" r="2" fill="#ffc65a"/><circle cx="37" cy="29" r="2" fill="#ffc65a"/></svg>
+        </span>
+        <span class="brand-wordmark"><strong>HAMBONE</strong><small>ARCADE <span class="brand-spark">✳</span></small></span>
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="#games">All games</a>
+        <a href="#experiments">Experiments</a>
+        <a href="#about">About</a>
+      </nav>
+      <button class="header-surprise" id="headerSurprise" type="button"><span aria-hidden="true">✦</span> Surprise me <span aria-hidden="true">↗</span></button>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero shell" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse-dot"></span> THE INTERNET IS STILL FUN</div>
+        <h1 id="heroTitle">Serious about <em>being silly.</em></h1>
+        <p>A growing playground of tiny worlds, big collisions, weird ideas, and games made just because they sounded fun.</p>
+        <div class="hero-actions">
+          <a href="#games" class="button button-primary">Explore the arcade <span aria-hidden="true">↗</span></a>
+          <button type="button" class="button button-ghost" id="heroSurprise">✦ &nbsp; Pick for me</button>
+        </div>
+        <div class="hero-footnote"><span class="tiny-avatars" aria-hidden="true"><i>★</i><i>⚡</i><i>●</i></span> Made to play. Built to tinker. Always evolving.</div>
+      </div>
+      <div class="hero-art" aria-label="An illustrated clockwork arcade machine with colorful balls and spinning gears" role="img">
+        <div class="art-stars" aria-hidden="true">✳ &nbsp; ✦ &nbsp; ✳</div>
+        <div class="hero-podium" aria-hidden="true"></div>
+        <svg class="machine-svg" viewBox="0 0 610 580" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="case" x1="164" y1="109" x2="495" y2="508" gradientUnits="userSpaceOnUse"><stop stop-color="#fff0a8"/><stop offset=".4" stop-color="#fcb64b"/><stop offset="1" stop-color="#cf6c5e"/></linearGradient>
+            <linearGradient id="screen" x1="188" y1="157" x2="459" y2="377" gradientUnits="userSpaceOnUse"><stop stop-color="#263d82"/><stop offset="1" stop-color="#121934"/></linearGradient>
+            <radialGradient id="marble" cx=".3" cy=".25" r=".8"><stop stop-color="#fff"/><stop offset=".22" stop-color="#89ecff"/><stop offset="1" stop-color="#3775ff"/></radialGradient>
+          </defs>
+          <ellipse cx="315" cy="537" rx="221" ry="25" fill="#020513" fill-opacity=".38"/>
+          <path d="M183 80C183 61 199 46 218 46H402C421 46 436 61 436 80V106H183V80Z" fill="#795fe9"/>
+          <path d="M162 96C162 77 177 62 196 62H425C444 62 459 77 459 96L485 449C488 472 472 490 448 490H174C150 490 134 472 137 449L162 96Z" fill="url(#case)" stroke="#ffdf93" stroke-width="9"/>
+          <path d="M177 122C177 111 186 102 197 102H425C436 102 445 111 445 122L456 347C457 362 447 373 433 373H188C174 373 164 362 165 347L177 122Z" fill="#342a68" stroke="#fff2b1" stroke-width="7"/>
+          <rect x="187" y="128" width="236" height="222" rx="21" fill="url(#screen)" stroke="#12162d" stroke-width="12"/>
+          <path d="M200 185C238 156 292 206 326 175C367 139 385 182 413 164" stroke="#90aaff" stroke-opacity=".33" stroke-width="15" stroke-linecap="round"/>
+          <circle class="gear gear-one" cx="283" cy="232" r="68" fill="#8765e9" stroke="#b5a4fa" stroke-width="12" stroke-dasharray="21 14"/>
+          <circle cx="283" cy="232" r="39" fill="#2d275f" stroke="#c8b1ff" stroke-width="12"/>
+          <circle class="gear gear-two" cx="376" cy="280" r="51" fill="#ff7d79" stroke="#ffd49e" stroke-width="9" stroke-dasharray="13 10"/>
+          <circle cx="376" cy="280" r="24" fill="#472e78" stroke="#ffd49e" stroke-width="8"/>
+          <path d="M212 295C245 327 283 327 325 304" stroke="#4de2b5" stroke-width="12" stroke-linecap="round"/>
+          <circle class="floating-ball ball-one" cx="220" cy="209" r="19" fill="#f7d86c" stroke="#fff2b1" stroke-width="6"/>
+          <circle class="floating-ball ball-two" cx="332" cy="179" r="15" fill="#62eac4" stroke="#d2fff4" stroke-width="5"/>
+          <circle class="floating-ball ball-three" cx="322" cy="312" r="19" fill="url(#marble)" stroke="#b8f5ff" stroke-width="5"/>
+          <path d="M160 385H469L478 452C479 464 470 474 459 474H172C161 474 152 464 153 452L160 385Z" fill="#dd8455"/>
+          <path d="M162 387H468L473 419H157L162 387Z" fill="#ffe2a0"/>
+          <rect x="193" y="427" width="99" height="29" rx="14.5" fill="#52448d"/>
+          <rect x="303" y="425" width="118" height="34" rx="17" fill="#6b56bc"/>
+          <circle cx="339" cy="442" r="10" fill="#8cecc8"/>
+          <circle cx="379" cy="442" r="10" fill="#ff8177"/>
+          <path d="M232 435V450M224 442H240" stroke="#ffe7a8" stroke-width="4" stroke-linecap="round"/>
+          <path d="M194 475H425L438 516H182L194 475Z" fill="#7254bf"/>
+          <path d="M183 518H438" stroke="#ceadff" stroke-width="11" stroke-linecap="round"/>
+          <path d="M215 54V88M409 53V87" stroke="#efd9ff" stroke-width="7" stroke-linecap="round"/>
+          <path d="M227 58H396" stroke="#efd9ff" stroke-width="4" stroke-linecap="round"/>
+          <rect x="243" y="28" width="137" height="58" rx="22" fill="#ffca69" stroke="#fff2c1" stroke-width="7"/>
+          <text x="311" y="66" text-anchor="middle" font-size="27" font-family="Arial,sans-serif" font-weight="900" fill="#4f3b80">PLAY!</text>
+          <path d="M128 147L136 169L157 177L136 185L128 208L120 185L99 177L120 169L128 147Z" fill="#8cfdcf"/>
+          <path d="M489 195L497 216L518 224L497 231L489 252L481 231L460 224L481 216L489 195Z" fill="#ffdc7c"/>
+          <circle cx="472" cy="89" r="12" fill="#7ce5f1"/>
+          <circle cx="115" cy="342" r="9" fill="#ff8d96"/>
+        </svg>
+        <div class="hero-art-label"><span class="spark-mini">✦</span> THE FUN FACTORY <small>OPEN 24 / 7</small></div>
+      </div>
+    </section>
+
+    <div class="marquee-wrap" aria-hidden="true"><div class="marquee-track">PLAY A LITTLE <span>✳</span> EXPERIMENT A LOT <span>✳</span> MAKE SOMETHING WEIRD <span>✳</span> PLAY A LITTLE <span>✳</span> EXPERIMENT A LOT <span>✳</span> MAKE SOMETHING WEIRD <span>✳</span></div></div>
+
+    <section id="games" class="collection shell" aria-labelledby="gamesTitle">
+      <div class="section-heading">
+        <div><p class="section-kicker">01 / THE COLLECTION</p><h2 id="gamesTitle">Pick your <em>rabbit hole.</em></h2><p>Every tile is something we've actually made. Choose a game and jump right in.</p></div>
+        <div class="collection-count"><strong id="projectCount">0</strong><span>THINGS TO EXPLORE</span></div>
+      </div>
+      <div class="browse-tools">
+        <div class="filter-list" id="filters" aria-label="Filter projects"></div>
+        <div class="browse-controls">
+          <label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">Search projects</span><input type="search" id="search" placeholder="Find your fun…" autocomplete="off"></label>
+          <button id="favoritesOnly" class="favorites-filter" type="button" aria-pressed="false" title="Show favorites"><span aria-hidden="true">♡</span> <span class="favorites-label">Favorites</span></button>
+        </div>
+      </div>
+      <div class="project-grid" id="projectGrid" aria-live="polite"></div>
+      <div class="empty-state" id="emptyState" hidden><span aria-hidden="true">🪐</span><h3>Nothing in this orbit.</h3><p>Try another search or clear the filters.</p><button type="button" class="button button-ghost" id="resetFilters">Show everything</button></div>
+    </section>
+
+    <section class="discovery-section shell" id="experiments">
+      <div class="discovery-card">
+        <div class="discovery-art" aria-hidden="true"><div class="discovery-disc">✦</div><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><span class="discovery-dot one"></span><span class="discovery-dot two"></span></div>
+        <div class="discovery-copy"><p class="section-kicker">02 / THE LAB</p><h2>We make <em>other stuff,</em> too.</h2><p>Photo experiments, sound playgrounds, miniature worlds, and prototypes that don't fit in a box. They're all part of the arcade.</p><button type="button" class="button button-secondary" id="seeExperiments">Browse experiments <span aria-hidden="true">↗</span></button></div>
+      </div>
+    </section>
+
+    <section class="about shell" id="about"><div class="about-icon" aria-hidden="true">☺</div><div><p class="section-kicker">03 / THE STORY</p><h2>Made with curiosity.<br><em>Shared for fun.</em></h2></div><div class="about-copy"><p>Hambone Software is a creative workshop for games, playful technology, and little ideas that get wonderfully out of hand.</p><p>The projects live in their own GitHub repositories, so every game can keep growing while this arcade stays your front door.</p><a href="https://github.com/hambonesoftware" target="_blank" rel="noopener noreferrer">See the workshop on GitHub ↗</a></div></section>
+  </main>
+
+  <footer class="site-footer"><div class="shell footer-inner"><div><strong>HAMBONE ARCADE <span>✳</span></strong><p>Stay curious. Play often.</p></div><div class="footer-links"><a href="#top">Back to top ↑</a><a href="https://github.com/hambonesoftware" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div><small>© <span id="year"></span> Hambone Software</small></div></footer>
+  <dialog id="previewDialog" class="preview-dialog" aria-label="Game preview"><div class="preview-bar"><div><span class="preview-dot" aria-hidden="true"></span><strong id="previewTitle">Preview</strong></div><button type="button" id="closePreview" aria-label="Close preview">✕</button></div><p class="preview-message" id="previewMessage">Some games may prevent embedded previews. Open the full game if it doesn't appear here.</p><iframe id="previewFrame" title="Game preview" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups" ></iframe><div class="preview-footer"><span>Best experienced full screen</span><a id="previewOpen" class="button button-primary" href="#" target="_blank" rel="noopener noreferrer">Open game ↗</a></div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
