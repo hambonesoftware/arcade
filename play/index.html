@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101720">
+  <title>Hambone PLAY — HUD Design Lab</title>
+  <meta name="description" content="Interactive HUD design system for Hambone Arcade games.">
+  <link rel="stylesheet" href="./v1/hambone-play.css">
+  <link rel="stylesheet" href="./lab.css">
+  <script type="module" src="./lab.js"></script>
+</head>
+<body>
+  <div class="lab-page">
+    <header class="lab-header">
+      <a href="../" class="return-link">‹ HAMBONE ARCADE</a>
+      <div><span class="kicker">DESIGN SYSTEM / v1.0</span><h1>Hambone <em>PLAY</em></h1></div>
+      <span class="beta">INTERACTIVE PREVIEW</span>
+    </header>
+    <main class="lab-layout">
+      <section class="preview-area" aria-label="HUD preview">
+        <div class="preview-top"><span>LIVE HUD COMPOSITION</span><span id="resolution">PORTRAIT / 390 × 720</span></div>
+        <div id="previewFrame" class="preview-frame portrait">
+          <section id="previewStage" class="preview-stage" data-demo-genre="workbench" aria-label="Illustrative game environment">
+            <svg class="demo-art demo-workbench" viewBox="0 0 390 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs><linearGradient id="industrial" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#38515b"/><stop offset="1" stop-color="#101e25"/></linearGradient><linearGradient id="steel" x1="0" y1="0" x2="1" y2=".6"><stop stop-color="#e5e6dc"/><stop offset="1" stop-color="#728a95"/></linearGradient></defs>
+              <rect width="390" height="720" fill="#14242c"/><ellipse cx="210" cy="525" rx="205" ry="43" fill="#071218" opacity=".5"/>
+              <path d="M14 500L280 474L384 533L112 557Z" fill="#314b58" stroke="#6a8189" stroke-width="3"/>
+              <path d="M26 384H87V506H26Z" fill="url(#industrial)" stroke="#7795a4" stroke-width="3"/>
+              <rect x="27" y="372" width="72" height="27" rx="3" fill="#bdc7cd"/>
+              <path d="M87 400Q190 397 305 436L307 451Q190 418 87 415Z" fill="url(#steel)" stroke="#c9d3d0" stroke-width="2"/>
+              <rect x="306" y="245" width="14" height="260" fill="#637986"/><rect x="292" y="234" width="42" height="36" rx="3" fill="#a6b9bb"/>
+              <rect x="303" y="276" width="18" height="111" fill="#93a8ac"/><rect x="309" y="376" width="7" height="61" fill="#e3ebee"/>
+              <circle cx="312" cy="435" r="13" fill="#f7bf71"/>
+              <rect x="45" y="540" width="290" height="12" rx="3" fill="#61777d" opacity=".3"/>
+            </svg>
+            <svg class="demo-art demo-broadcast" viewBox="0 0 390 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs><linearGradient id="wood" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#c58a4d"/><stop offset=".55" stop-color="#8a5834"/><stop offset="1" stop-color="#553d32"/></linearGradient></defs>
+              <rect width="390" height="720" fill="#263029"/><path d="M-100 230L560 490V690L-100 390Z" fill="#594430"/>
+              <path d="M-98 255Q170 333 450 468" fill="none" stroke="#d4a46c" stroke-width="78"/>
+              <path d="M-98 255Q170 333 450 468" fill="none" stroke="url(#wood)" stroke-width="63"/>
+              <path d="M-98 255Q170 333 450 468" fill="none" stroke="#e7c28b" stroke-width="5"/>
+              <path d="M-98 255Q170 333 450 468" fill="none" stroke="#513723" stroke-width="3" stroke-dasharray="14 10"/>
+              <circle cx="125" cy="319" r="23" fill="#ff667d" stroke="#ffe7d5" stroke-width="3"/><circle cx="117" cy="311" r="7" fill="#fffb" />
+              <circle cx="232" cy="373" r="17" fill="#66dfc3" stroke="#fff2cd" stroke-width="3"/><circle cx="226" cy="367" r="5" fill="#fffa"/>
+              <circle cx="285" cy="394" r="20" fill="#ffd162" stroke="#fff2cd" stroke-width="3"/><circle cx="277" cy="387" r="6" fill="#fffa"/>
+              <path d="M-30 575Q210 480 440 618" fill="none" stroke="#aa784c" stroke-width="63"/><path d="M-30 575Q210 480 440 618" fill="none" stroke="#e0a76c" stroke-width="54"/>
+            </svg>
+            <svg class="demo-art demo-arcade" viewBox="0 0 390 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <rect width="390" height="720" fill="#101b17"/><g stroke="#325146" opacity=".5"><path d="M0 120H390M0 180H390M0 240H390M0 300H390M0 360H390M0 420H390M0 480H390M0 540H390M0 600H390"/><path d="M65 0V720M130 0V720M195 0V720M260 0V720M325 0V720"/></g>
+              <g fill="#d5bd7a" stroke="#f9e6a4" stroke-width="2"><circle cx="90" cy="215" r="16"/><circle cx="123" cy="228" r="15"/><circle cx="155" cy="239" r="14"/><circle cx="185" cy="250" r="14"/><circle cx="215" cy="258" r="13"/></g>
+              <g fill="#bf7446"><rect x="48" y="280" width="27" height="22" rx="8"/><rect x="270" y="225" width="30" height="22" rx="8"/><rect x="178" y="362" width="28" height="25" rx="8"/><rect x="315" y="424" width="33" height="24" rx="8"/></g>
+              <path d="M195 537L221 590L195 579L169 590Z" fill="#7edfc1" stroke="#d2fff0" stroke-width="4"/><path d="M195 526V480" stroke="#91ffe0" stroke-width="4" stroke-dasharray="8 10"/>
+            </svg>
+            <svg class="demo-art demo-adventure" viewBox="0 0 390 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <rect width="390" height="720" fill="#7fc0bc"/><circle cx="306" cy="142" r="73" fill="#ffe5a6"/>
+              <path d="M-20 390Q130 255 250 390Q330 300 410 360V720H-20Z" fill="#589b77"/>
+              <path d="M-20 430Q120 345 240 445Q315 388 410 423V720H-20Z" fill="#44856b"/>
+              <path d="M-60 550L190 475L440 565V720H-60Z" fill="#dfb888" stroke="#f7dda6" stroke-width="6"/>
+              <rect x="48" y="335" width="28" height="142" rx="8" fill="#684b38"/><circle cx="65" cy="324" r="53" fill="#4e9870"/><circle cx="31" cy="351" r="35" fill="#5ba37d"/>
+              <g transform="translate(205 416)"><rect x="-34" y="-49" width="68" height="74" rx="13" fill="#ffdc7e" stroke="#6b543a" stroke-width="5"/><circle cx="-12" cy="-23" r="5" fill="#3e4052"/><circle cx="13" cy="-23" r="5" fill="#3e4052"/><path d="M-9 -4Q0 5 12 -4" stroke="#3e4052" stroke-width="4" fill="none"/><path d="M-19 25V57M20 25V57" stroke="#624e45" stroke-width="12" stroke-linecap="round"/><path d="M-35 -4L-55 12M35 -4L55 12" stroke="#624e45" stroke-width="11" stroke-linecap="round"/></g>
+              <path d="M35 505L50 488L64 505" fill="none" stroke="#fbf3d0" stroke-width="4"/>
+            </svg>
+          </section>
+        </div>
+        <p class="preview-note">Illustrative scenery. The HUD components and controls are the actual shared Hambone PLAY library.</p>
+      </section>
+      <aside class="lab-controls">
+        <div class="control-section">
+          <span class="section-title">01 / PRESENTATION FORMAT</span>
+          <div class="style-choices" role="group" aria-label="Game HUD style">
+            <button data-style="workbench" class="selected">Workbench <small>Mechanical World</small></button>
+            <button data-style="broadcast">Broadcast <small>Marble Merge</small></button>
+            <button data-style="arcade">Classic Arcade <small>ApeironX</small></button>
+            <button data-style="adventure">Adventure <small>HopShift</small></button>
+          </div>
+        </div>
+        <div class="control-section">
+          <span class="section-title">02 / GAME STATE</span>
+          <div class="mode-choices" role="group" aria-label="HUD phase">
+            <button data-phase="ready" class="selected">Ready</button>
+            <button data-phase="playing">Playing</button>
+            <button data-phase="result">Result</button>
+          </div>
+        </div>
+        <div class="control-section">
+          <span class="section-title">03 / VIEWPORT & DENSITY</span>
+          <div class="mode-choices">
+            <button data-screen="portrait" class="selected">Phone</button>
+            <button data-screen="landscape">Wide</button>
+          </div>
+          <div class="mode-choices">
+            <button data-density="standard" class="selected">Standard</button>
+            <button data-density="compact">Compact</button>
+          </div>
+        </div>
+        <div class="control-section">
+          <span class="section-title">04 / INTERACTION</span>
+          <button id="demoEvent" class="event-demo">TRIGGER GAME EVENT ↗</button>
+          <div class="data-pane" aria-live="polite">
+            <span>CAMERA SAFE REGION</span>
+            <strong id="safeRegion">Calculating…</strong>
+            <small>Updated automatically for visible controls and viewport size.</small>
+          </div>
+        </div>
+        <a class="source-link" href="https://github.com/hambonesoftware/arcade/tree/main/play/v1">VIEW SHARED CODE ↗</a>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

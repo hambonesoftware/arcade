@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test play/tests/*.test.mjs"
+    "test": "node --test play/tests/*.test.mjs && node --check play/lab.js"
   }
 }

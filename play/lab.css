@@ -1,0 +1,39 @@
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#101720;color:#f2ede3;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+.lab-page{max-width:1420px;margin:auto;padding:24px clamp(16px,3vw,44px) 40px}
+.lab-header{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid #384851;padding-bottom:22px}
+.return-link{color:#c0c9ce;font-size:11px;font-weight:800;text-decoration:none;letter-spacing:.06em}
+.lab-header h1{font-size:clamp(25px,3.6vw,48px);letter-spacing:-.055em;margin:2px 0}.lab-header h1 em{font-style:normal;color:#f3c789}
+.kicker,.beta,.section-title{font-size:11px;font-weight:800;letter-spacing:.14em;color:#efc48a}
+.beta{color:#adc2c4}
+.lab-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(290px,.85fr);gap:35px;padding-top:28px}
+.preview-area{min-width:0}.preview-top{display:flex;justify-content:space-between;gap:12px;color:#91a7ad;font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:16px}
+.preview-frame{width:min(390px,100%);margin:0 auto;padding:8px;background:#29353b;border:1px solid #778187;border-radius:30px;box-shadow:0 26px 70px #0008;transition:width .25s,border-radius .25s}
+.preview-frame.landscape{width:min(100%,760px);border-radius:24px}
+.preview-stage{position:relative;width:100%;aspect-ratio:390/720;overflow:hidden;border-radius:23px;background:#1a2b31;isolation:isolate}
+.landscape .preview-stage{aspect-ratio:16/9;border-radius:16px}
+.demo-art{position:absolute;inset:0;width:100%;height:100%;display:none}
+[data-demo-genre="workbench"] .demo-workbench,[data-demo-genre="broadcast"] .demo-broadcast,[data-demo-genre="arcade"] .demo-arcade,[data-demo-genre="adventure"] .demo-adventure{display:block}
+.preview-note{text-align:center;color:#8da6b0;font-size:11px;margin:14px 0;line-height:1.5}
+.lab-controls{min-width:0}.control-section{border-bottom:1px solid #3b4b55;padding-bottom:22px;margin-bottom:20px}
+.section-title{display:block;margin-bottom:12px}
+.style-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.style-choices button{border:1px solid #485963;background:#1b2a33;color:#f2efe8;border-radius:10px;min-height:75px;padding:12px;text-align:left;font-size:15px;font-weight:750}
+.style-choices button small{display:block;font-size:11px;font-weight:400;margin-top:6px;color:#a1b2ba}
+.style-choices button.selected,.mode-choices button.selected{border-color:#f1be75;background:#3b3b37}
+.mode-choices{display:flex;gap:7px;margin-bottom:10px}
+.mode-choices button{border:1px solid #50636c;background:#1a2b34;color:#e5e9e5;border-radius:9px;min-height:44px;padding:8px 12px;flex:1;font-size:13px;font-weight:750}
+.event-demo{width:100%;min-height:48px;border:0;border-radius:10px;background:#f1c58c;color:#23323b;font-weight:850;font-size:12px;letter-spacing:.05em}
+.data-pane{margin-top:14px;padding:14px;background:#1d3037;border-left:3px solid #f2c68a;display:grid;gap:5px}
+.data-pane span,.data-pane small{font-size:10px;color:#bdccd0}.data-pane strong{font-size:13px;font-variant-numeric:tabular-nums}
+.source-link{color:#e7bf84;text-decoration:none;font-size:12px;font-weight:800}
+.preview-stage .hb-play{--hb-hud-top:10px;--hb-accent:#f0c58d}
+.preview-stage .hb-play--workbench .hb-play__scorebug{--hb-hud-top:10px}
+.preview-stage .hb-play--broadcast{--hb-accent:#f2d48e}
+.preview-stage .hb-play--arcade{--hb-accent:#f5d17e}
+.preview-stage .hb-play--adventure{--hb-accent:#a9efbd}
+.preview-stage .hb-play__actions{justify-content:center}
+.preview-stage .hb-play__actions .is-primary{min-width:130px}
+@media(max-width:850px){.lab-layout{grid-template-columns:1fr}.lab-controls{max-width:720px;margin:auto;width:100%}.preview-frame.landscape{width:min(100%,620px)}}
+@media(max-width:540px){.lab-page{padding:13px 13px 35px}.lab-header{gap:8px}.beta{display:none}.return-link{font-size:9px}.lab-header h1{font-size:26px}.lab-layout{gap:19px;padding-top:18px}.preview-top{font-size:9px}.preview-frame{width:min(370px,100%)}}

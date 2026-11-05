@@ -49,3 +49,10 @@ Run `python3 -m http.server 8000` in the repository root, then visit http://loca
 - Favorites are saved locally to browser storage and do not sync between devices.
 - Projects keep their independent source repositories and deployment workflows.
 - The card art is illustrative CSS/SVG/emoji artwork, not actual screenshots of the games.
+
+
+## Hambone PLAY HUD Design Lab
+
+An interactive style/viewport preview for our shared game HUD patterns is available at https://hambonesoftware.github.io/arcade/play/ .
+
+The canonical source for Workbench, Broadcast, Arcade and Adventure variants is in play/v1. Mechanical World and Marble Merge vendor version-pinned copies and are the first live integrations.
