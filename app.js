@@ -21,6 +21,19 @@ const PROJECTS = [
     featured: true
   },
   {
+    id: 'mechanicalworld',
+    repo: 'mechanicalWorld',
+    title: 'Mechanical World: REDLINE',
+    category: 'Physics',
+    type: '3D mechanical stress-testing lab',
+    description: 'Engineer an I-beam, test it under load, and watch stress, deformation and a dramatic tearing failure.',
+    emoji: '🔩',
+    sideEmoji: '⚡',
+    colors: ['#c58b51', '#3b5e68', '#f8d29b'],
+    playable: true,
+    featured: true
+  },
+  {
     id: 'marblemerge',
     repo: 'marbleMerge',
     title: 'Marble Merge',
