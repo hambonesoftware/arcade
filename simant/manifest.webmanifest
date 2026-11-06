@@ -1,0 +1,19 @@
+{
+  "name": "Colony — Ant World",
+  "short_name": "Colony",
+  "description": "A tiny backyard, a mighty ant colony.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f1915",
+  "theme_color": "#17231d",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
