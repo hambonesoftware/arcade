@@ -29,7 +29,7 @@ let antId=0;
 function addAnt(side,caste='worker',x=null,y=null){const n=NEST[side],a={id:++antId,side,caste,x:x??n.x+rand(-35,35),y:y??n.y+rand(-35,35),angle:rand(0,TAU),speed:rand(35,52),health:caste==='soldier'?85:caste==='scout'?120:45,maximum:caste==='soldier'?85:caste==='scout'?120:45,carry:false,target:null,wander:rand(0,TAU),think:rand(.1,2),attack:0,scent:0,age:0};ants.push(a);return a;}
 function activeAnts(side){return ants.filter(a=>a.side===side&&a.health>0);}
 function spawnPopulation(){ants=[];eggs=[];const count=clamp(13+game.claimed.length*3,14,42);for(let i=0;i<count;i++)addAnt('black',i%5===0?'soldier':'worker');for(let i=0;i<clamp(16+game.claimed.length*4,16,45);i++)addAnt('red',i%4===0?'soldier':'worker');addAnt('black','scout',245,390);}
-function newTile(index,existing=false){game.tile=index;game.redQueen=100;game.queen=clamp(game.queen,55,100);game.food=existing?game.food:Math.max(game.food,75);game.redFood=60+game.claimed.length*5;game.won=false;game.days++;makeObjects();spawnPopulation();centerOnScout(true);log(existing?'Scout reporting to the nest.':'New territory! The red colony is entrenched.');store();}
+function newTile(index,existing=false){game.tile=index;game.redQueen=100;game.queen=clamp(game.queen,55,100);game.food=existing?game.food:Math.max(game.food,75);game.redFood=60+game.claimed.length*5;game.won=false;game.tileElapsed=0;game.days++;makeObjects();spawnPopulation();centerOnScout(true);log(existing?'Scout reporting to the nest.':'New territory! The red colony is entrenched.');store();}
 function scout(){return ants.find(a=>a.caste==='scout'&&a.side==='black'&&a.health>0);}
 function nearestFood(a){let best=null,score=Infinity;for(const f of foods){if(f.amount<=0)continue;const d=distance(a,f)+(a.side==='black'?Math.max(0,f.x-700)*.18:Math.max(0,400-f.x)*.18);if(d<score){best=f;score=d;}}return best;}
 function targetFor(a){const n=NEST[a.side],enemy=NEST[a.side==='black'?'red':'black'];if(a.caste==='scout')return a.target;
@@ -37,7 +37,7 @@ if(a.carry)return n;
 if(a.caste==='worker'){
  if(a.side==='black'&&game.order==='rally'&&scout()&&distance(a,scout())<205)return {x:scout().x+rand(-27,27),y:scout().y+rand(-27,27)};
  const f=nearestFood(a);return f?{x:f.x,y:f.y,ref:f}:n;}
- if(a.side==='red'){const front=game.redQueen>0?enemy:{x:enemy.x,y:enemy.y};return {x:front.x+rand(-100,100),y:front.y+rand(-115,115)};}
+ if(a.side==='red'){const nudge=game.tileElapsed>95?enemy:{x:650,y:360};return {x:nudge.x+rand(-160,160),y:nudge.y+rand(-155,155)};}
  if(game.order==='attack')return {x:enemy.x+rand(-50,50),y:enemy.y+rand(-50,50)};
  if(game.order==='rally'&&scout())return {x:scout().x+rand(-55,55),y:scout().y+rand(-55,55)};
  if(game.order==='defend')return {x:n.x+rand(-120,120),y:n.y+rand(-110,110)};
@@ -46,13 +46,13 @@ if(a.caste==='worker'){
 function moveTo(a,p,dt){if(!p)return;const dx=p.x-a.x,dy=p.y-a.y,d=len(dx,dy);if(d<1)return;const dir=Math.atan2(dy,dx),turn=((dir-a.angle+Math.PI*3)%TAU)-Math.PI;a.angle+=clamp(turn,-dt*8,dt*8);let speed=a.caste==='scout'?118:a.caste==='soldier'?78:a.speed;if(a.carry)speed*=.78;const step=Math.min(d,speed*dt);a.x=clamp(a.x+dx/d*step,14,W-14);a.y=clamp(a.y+dy/d*step,14,H-14);}
 function emit(x,y,color,n=5){for(let i=0;i<n;i++)particles.push({x,y,vx:rand(-65,65),vy:rand(-65,65),t:rand(.25,.55),life:.55,color,r:rand(1.4,4.1)});}
 function killAnt(a){a.health=0;emit(a.x,a.y,a.side==='red'?'#db624e':'#2f3031',6);if(a.caste==='scout'){log('Your scout fell! The colony will send another.');game.scoutRespawn=5;} }
-function fight(a,b,dt){if(a.attack>0||b.health<=0)return;if(distance(a,b)>a.caste==='soldier'?0:0){}const d=distance(a,b);if(d>17)return;a.attack=.52;if(a.side!==b.side){const dmg=(a.caste==='soldier'?18:a.caste==='scout'?15:8)*rand(.7,1.2);b.health-=dmg;emit(b.x,b.y,'#f7ca6c',3);if(b.health<=0)killAnt(b);}}
+function fight(a,b,dt){if(a.attack>0||b.health<=0)return;const d=distance(a,b);if(d>17)return;a.attack=.52;if(a.side!==b.side){const dmg=(a.caste==='soldier'?18:a.caste==='scout'?15:8)*rand(.7,1.2);b.health-=dmg;emit(b.x,b.y,'#f7ca6c',3);if(b.health<=0)killAnt(b);}}
 function combat(dt){const live=ants.filter(a=>a.health>0);const blacks=live.filter(a=>a.side==='black'),reds=live.filter(a=>a.side==='red');for(const a of live){if(a.attack>0)continue;const opponents=a.side==='black'?reds:blacks;let closest=null,dmin=24;for(const b of opponents){const d=distance(a,b);if(d<dmin){closest=b;dmin=d;}}if(closest)fight(a,closest,dt);
 const enemyNest=NEST[a.side==='black'?'red':'black'];if(distance(a,enemyNest)<33&&(a.caste==='soldier'||a.caste==='scout')&&a.attack<=0){a.attack=.58;const damage=a.caste==='scout'?3.1:1.45;if(a.side==='black'&&game.redQueen>0){game.redQueen=Math.max(0,game.redQueen-damage);emit(enemyNest.x+rand(-8,8),enemyNest.y+rand(-8,8),'#fa8d5a',2);}else if(a.side==='red'&&game.queen>0){game.queen=Math.max(0,game.queen-damage);emit(enemyNest.x+rand(-8,8),enemyNest.y+rand(-8,8),'#f9e2a1',2);}}
 }
 }
 function regenFood(){const f=foods.filter(f=>f.amount>0);if(f.length<8||Math.random()<.008){let x=rand(60,W-60),y=rand(60,H-60);foods.push({x,y,amount:5+Math.floor(rand(0,9)),max:18,r:rand(10,19)});}if(foods.length>60)foods=foods.filter(f=>f.amount>0);}
-function update(dt){if(game.paused||!booted)return;dt=Math.min(dt,0.06)*game.speed;game.elapsed+=dt;phase+=dt;weatherClock+=dt;game.days=1+Math.floor(game.elapsed/28);
+function update(dt){if(game.paused||!booted)return;dt=Math.min(dt,0.06)*game.speed;game.elapsed+=dt;game.tileElapsed=(game.tileElapsed||0)+dt;phase+=dt;weatherClock+=dt;game.days=1+Math.floor(game.elapsed/28);
 if(game.won||game.queen<=0){updateFX(dt);return;}
 for(const a of ants){if(a.health<=0)continue;a.age+=dt;a.attack=Math.max(0,a.attack-dt);a.think-=dt;if(a.think<=0&&a.caste!=='scout'){a.target=targetFor(a);a.think=rand(.8,2.8);}
 if(a.caste==='scout'&&!a.target){const f=nearestFood(a);if(f&&game.order==='forage'&&distance(a,f)<80)a.target={x:f.x,y:f.y,ref:f};}
