@@ -8,6 +8,21 @@
  */
 const PROJECTS = [
   {
+    id: 'colony',
+    repo: 'arcade',
+    url: 'https://hambonesoftware.github.io/arcade/simant/',
+    sourcePath: '/tree/main/simant',
+    title: 'Colony: Ant World',
+    category: 'Worlds',
+    type: 'Ant-colony strategy simulation',
+    description: 'Lead a golden scout, gather food, raise workers, battle red ants and conquer a nine-patch backyard.',
+    emoji: '🐜',
+    sideEmoji: '🌿',
+    colors: ['#88ad63', '#2c4c37', '#f4d478'],
+    playable: true,
+    featured: true
+  },
+  {
     id: 'sprayworks',
     repo: 'sprayworks',
     title: 'SprayWorks',
@@ -243,11 +258,12 @@ function announce(message) {
 }
 
 function projectUrl(project) {
+  if (project.url) return project.url;
   return project.playable ? PAGES_BASE + project.repo + '/' : GITHUB_BASE + project.repo;
 }
 
 function repoUrl(project) {
-  return GITHUB_BASE + project.repo;
+  return GITHUB_BASE + project.repo + (project.sourcePath || '');
 }
 
 function createFilters() {
