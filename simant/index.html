@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#17231d">
 <meta name="description" content="Colony: a playful browser ant colony simulation inspired by classic 1990s simulation games.">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
+<link rel="manifest" href="./manifest.webmanifest">
 <title>COLONY — Ant World</title>
 <style>
 :root{color-scheme:dark;--bg:#0f1915;--panel:#1b2921;--panel2:#223328;--line:#3b4c39;--ink:#f3edda;--muted:#b2baa8;--leaf:#d2ee83;--gold:#f8c970;--red:#f17f69;--shadow:0 18px 60px #050b07a6}
@@ -33,6 +36,7 @@ button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto
 @media(max-height:650px) and (orientation:landscape){.layout{grid-template-columns:minmax(0,1fr) 260px}.statusbar{grid-template-columns:repeat(5,1fr)}.metric.primarymetric{grid-column:auto;flex-direction:column}.stage{height:clamp(260px,63dvh,450px);min-height:260px}.side{display:flex}.top{margin-bottom:7px}.sidecard{padding:10px}.sidecard.compact-info{display:none}}
 </style>
 <script src="./game.js" defer></script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}</script>
 </head>
 <body>
 <div class="app">
