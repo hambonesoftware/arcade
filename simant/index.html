@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#17231d">
+<meta name="description" content="Colony: a playful browser ant colony simulation inspired by classic 1990s simulation games.">
+<title>COLONY — Ant World</title>
+<style>
+:root{color-scheme:dark;--bg:#0f1915;--panel:#1b2921;--panel2:#223328;--line:#3b4c39;--ink:#f3edda;--muted:#b2baa8;--leaf:#d2ee83;--gold:#f8c970;--red:#f17f69;--shadow:0 18px 60px #050b07a6}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);overscroll-behavior:none}
+body{background:radial-gradient(ellipse at 20% -8%,#354b30 0,transparent 32%),radial-gradient(ellipse at 99% 95%,#253e31 0,transparent 35%),var(--bg)}button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
+button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto;padding:15px 18px max(18px,env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:20px;justify-content:space-between;margin-bottom:13px}.brand{display:flex;align-items:center;gap:11px;min-width:0}.brandmark{width:43px;height:43px;display:grid;place-items:center;background:#d7e99b;border-radius:14px;color:#28341d;box-shadow:inset 0 -5px #adbf7c;font-size:24px;flex:none}.brandtitle{font-weight:950;letter-spacing:-.065em;font-size:clamp(24px,3vw,35px);line-height:1}.brandtitle span{color:#dbef93}.brandsub{color:#aebba7;font-size:10px;letter-spacing:.16em;font-weight:800;margin-top:5px}.top-actions{display:flex;gap:8px;align-items:center;white-space:nowrap}
+.btn{border:1px solid #435441;color:var(--ink);background:#25362b;border-radius:12px;padding:10px 13px;font-weight:800;font-size:12px;min-height:39px}.btn:hover{background:#34523b}.btn.primary{background:var(--leaf);color:#1f2e19;border-color:transparent}.btn.warning{background:#f3b65e;color:#201a0b;border-color:transparent}.btn.active{background:#e9efb4;color:#24321d;border-color:transparent}.btn.subtle{background:#1b2b23}.btn:active{transform:translateY(1px)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:13px;align-items:stretch}.gamecol{min-width:0}.statusbar{display:grid;grid-template-columns:1.45fr repeat(4,1fr);gap:9px;margin-bottom:10px}.metric{border:1px solid #344438;background:linear-gradient(145deg,#26392b,#1a2921);border-radius:15px;min-height:65px;padding:10px 13px;display:flex;justify-content:center;flex-direction:column}.metric small{color:#abb8a5;text-transform:uppercase;letter-spacing:.12em;font-weight:850;font-size:10px}.metric strong{font-size:clamp(18px,2vw,24px);font-variant-numeric:tabular-nums;line-height:1.2}.metric.primarymetric{background:linear-gradient(120deg,#394d30,#263d31);border-color:#66814d}.metric.primarymetric strong{font-size:16px;color:#f1f5d2}.metric strong.red{color:#ef9780}.metric strong.green{color:#d3f193}
+.stage{position:relative;min-height:400px;height:clamp(410px,62vh,730px);overflow:hidden;border:2px solid #5f704d;border-radius:20px;background:#a47e56;box-shadow:var(--shadow);touch-action:none;isolation:isolate}
+#world{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.terrain-title{position:absolute;top:13px;left:14px;pointer-events:none;border:1px solid #fff4;background:#14251edb;border-radius:12px;padding:8px 12px;backdrop-filter:blur(10px)}.terrain-title strong{display:block;font-size:12px;letter-spacing:.04em}.terrain-title span{color:#c4d0b4;font-size:11px}
+.stage-actions{position:absolute;top:12px;right:12px;display:flex;gap:5px}.iconbtn{width:38px;height:38px;display:grid;place-items:center;background:#1c2b24e6;border:1px solid #ffffff44;border-radius:11px;color:#f6efd9;font-size:21px;box-shadow:0 4px 10px #0003}
+#minimap{position:absolute;bottom:13px;right:13px;width:122px;height:82px;border:2px solid #e5e4bc;border-radius:8px;background:#40533c;box-shadow:0 4px 12px #0006;pointer-events:none}
+.context{position:absolute;bottom:13px;left:14px;display:flex;align-items:center;gap:8px;max-width:calc(100% - 154px);background:#14221de8;border:1px solid #d8dab03b;border-radius:13px;padding:8px 11px;font-weight:700;font-size:11px;color:#eff5d9;backdrop-filter:blur(10px)}.context .dot{width:8px;height:8px;background:#e9c272;border-radius:100%;box-shadow:0 0 0 4px #e9c27230;flex:none}
+.tabbar{display:flex;align-items:center;gap:8px;padding-top:10px;flex-wrap:wrap}.tabbar .btn{flex:1;min-width:90px}.tabbar .spacer{flex:1}
+.side{display:flex;flex-direction:column;gap:11px}.sidecard{background:linear-gradient(155deg,#22342a,#192720);border:1px solid #46543d;border-radius:18px;padding:17px}.eyebrow{font-size:10px;letter-spacing:.16em;color:#c2d18c;font-weight:900;text-transform:uppercase;margin-bottom:9px}.sidecard h2{font-size:22px;letter-spacing:-.04em;margin:0 0 9px;line-height:1.1}.sidecard p{font-size:13px;line-height:1.52;color:#b7c2b0;margin:0 0 12px}.progress{height:9px;background:#15231b;border-radius:20px;overflow:hidden;border:1px solid #526245}.progress b{height:100%;display:block;width:0%;background:linear-gradient(90deg,#d6ef8a,#f6d18a);transition:width .3s}
+.statrow{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #ffffff16;font-size:12px}.statrow:last-child{border-bottom:0}.statrow span{color:#b6c5b2}.statrow b{color:#f6f4dc;font-variant-numeric:tabular-nums}
+.group{display:grid;grid-template-columns:1fr 1fr;gap:7px}.command{min-height:49px;padding:10px;border:1px solid #4e6049;border-radius:11px;background:#2b4030;color:#f5f3df;text-align:left;font-weight:850;font-size:12px}.command small{display:block;font-size:10px;opacity:.74;margin-top:3px;font-weight:600}.command[aria-pressed="true"]{background:#dcebb0;color:#23321e;border-color:#dcebb0}.command:hover{border-color:#dcebb0}.hint{color:#c5c6ac;font-size:11px;line-height:1.48;margin-top:9px}.log{display:flex;flex-direction:column;gap:8px}.logline{font-size:11px;color:#c3cbb5;line-height:1.4;padding-left:11px;border-left:2px solid #849e65}
+.footer{color:#83968a;font-size:11px;text-align:center;margin-top:13px}.footer a{color:#c2d791}
+.modal{position:fixed;inset:0;background:#07100bdc;display:grid;place-items:center;padding:18px;z-index:20;overflow:auto}.modal[hidden]{display:none}.dialog{background:linear-gradient(150deg,#304537,#16271e);border:1px solid #728366;box-shadow:0 25px 100px #000a;border-radius:25px;padding:clamp(20px,4vw,35px);max-width:500px;width:100%;max-height:calc(100dvh - 40px);overflow:auto}.dialog .heroicon{font-size:45px;background:#deefae;width:77px;height:77px;border-radius:22px;display:grid;place-items:center;margin-bottom:18px}.dialog h1{font-size:clamp(32px,6vw,45px);letter-spacing:-.06em;line-height:1.05;margin:0 0 12px}.dialog h1 span{color:var(--leaf)}.dialog p{font-size:14px;line-height:1.65;color:#c8d6c0}.dialog .steps{display:grid;gap:8px;margin:18px 0}.step{border:1px solid #ffffff27;border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.5;background:#0a1c145b}.step b{color:#deefa3}.dialog .start{display:block;width:100%;font-size:15px;padding:15px}.dialog .fineprint{font-size:11px;color:#9bae9f;margin:12px 0 0}
+.helptext{display:none}.helptext.show{display:block}.control-row{display:flex;gap:7px;margin-top:12px}.control-row .btn{flex:1}
+@media(max-width:1060px){.layout{grid-template-columns:minmax(0,1fr)}.side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.sidecard:last-child{grid-column:1/-1}.stage{height:min(62dvh,600px)}}
+@media(max-width:650px){.app{padding:10px 10px max(18px,env(safe-area-inset-bottom))}.top{margin-bottom:10px}.brandmark{width:37px;height:37px;border-radius:11px}.brandtitle{font-size:25px}.brandsub{font-size:9px}.top-actions .btn{padding:9px 10px;font-size:11px}.top-actions .hide-mobile{display:none}.statusbar{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.metric{padding:8px 7px;min-height:59px;border-radius:10px}.metric small{font-size:8px;letter-spacing:.04em}.metric strong{font-size:17px}.metric.primarymetric{grid-column:1/-1;min-height:40px;flex-direction:row;align-items:center;justify-content:space-between;padding:8px 12px}.metric.primarymetric strong{font-size:13px}.stage{height:clamp(350px,53dvh,590px);min-height:350px;border-radius:15px}.terrain-title{top:8px;left:8px;padding:6px 9px}.terrain-title strong{font-size:11px}.terrain-title span{font-size:9px}.stage-actions{right:7px;top:7px;gap:4px}.iconbtn{width:34px;height:34px;font-size:18px}.context{font-size:10px;left:8px;bottom:9px;padding:7px;max-width:calc(100% - 113px)}#minimap{width:94px;height:63px;right:8px;bottom:9px}.side{grid-template-columns:1fr;gap:8px}.sidecard{padding:13px}.sidecard:last-child{grid-column:auto}.sidecard h2{font-size:20px}.sidecard p{margin-bottom:8px}.sidecard.compact-info{display:none}.tabbar{gap:5px}.tabbar .btn{font-size:11px;padding:9px 6px;min-width:70px}.tabbar .spacer{display:none}.footer{padding-bottom:12px}}
+@media(max-height:650px) and (orientation:landscape){.layout{grid-template-columns:minmax(0,1fr) 260px}.statusbar{grid-template-columns:repeat(5,1fr)}.metric.primarymetric{grid-column:auto;flex-direction:column}.stage{height:clamp(260px,63dvh,450px);min-height:260px}.side{display:flex}.top{margin-bottom:7px}.sidecard{padding:10px}.sidecard.compact-info{display:none}}
+</style>
+<script src="./game.js" defer></script>
+</head>
+<body>
+<div class="app">
+<header class="top">
+<div class="brand"><div class="brandmark" aria-hidden="true">🐜</div><div><div class="brandtitle">COLONY<span>.</span></div><div class="brandsub">A LITTLE WORLD. A BIG WAR.</div></div></div>
+<div class="top-actions"><button class="btn subtle hide-mobile" type="button" id="newGame">↻ New colony</button><button class="btn subtle" type="button" id="help">? Guide</button><button class="btn primary" type="button" id="pause" aria-pressed="false">Ⅱ Pause</button></div>
+</header>
+<div class="layout">
+<main class="gamecol">
+<div class="statusbar" aria-live="off">
+<div class="metric primarymetric"><small id="missionLabel">MISSION 01</small><strong id="missionTitle">Establish the colony</strong></div>
+<div class="metric"><small>⚫ Black ants</small><strong id="blacks">0</strong></div>
+<div class="metric"><small>🔴 Red ants</small><strong class="red" id="reds">0</strong></div>
+<div class="metric"><small>✦ Stored food</small><strong class="green" id="food">0</strong></div>
+<div class="metric"><small>🥚 Brood</small><strong id="eggs">0</strong></div>
+</div>
+<section class="stage" id="stage" aria-label="Ant colony simulation. Tap or click to send your golden scout ant to a destination.">
+<canvas id="world"></canvas><div class="terrain-title"><strong id="viewTitle">THE SURFACE</strong><span id="viewSubtitle">Tap ground to direct your golden scout</span></div>
+<div class="stage-actions"><button class="iconbtn" id="zoomOut" aria-label="Zoom out">−</button><button class="iconbtn" id="zoomIn" aria-label="Zoom in">+</button><button class="iconbtn" id="center" aria-label="Center on your ant">⌖</button></div>
+<canvas id="minimap" width="244" height="164" aria-hidden="true"></canvas>
+<div class="context" role="status"><span class="dot"></span><span id="tip">Scout the food, then defend your queen.</span></div>
+</section>
+<div class="tabbar" role="group" aria-label="Simulation views"><button class="btn active" data-view="surface" aria-pressed="true">🌱 Surface</button><button class="btn" data-view="nest" aria-pressed="false">🪺 Nest</button><button class="btn" data-view="yard" aria-pressed="false">▦ Backyard</button><span class="spacer"></span><button class="btn subtle" id="speed">1× speed</button></div>
+</main>
+<aside class="side" aria-label="Colony control panel">
+<section class="sidecard">
+<div class="eyebrow">● FIELD ORDERS</div><h2 id="orderTitle">Lead your ants</h2><p id="orderDescription">Your golden scout leads the black colony. Pick an order, then tap the field to move.</p>
+<div class="group" role="group" aria-label="Orders">
+<button class="command" data-order="forage" aria-pressed="true">🌿 Forage<small>Find & carry food</small></button>
+<button class="command" data-order="rally" aria-pressed="false">📣 Rally<small>Gather escorts</small></button>
+<button class="command" data-order="attack" aria-pressed="false">⚔ Attack<small>Fight the reds</small></button>
+<button class="command" data-order="defend" aria-pressed="false">🛡 Defend<small>Protect the nest</small></button>
+</div><div class="hint" id="controlHint">Tap food to gather it. Two fingers pan and pinch to zoom.</div>
+</section>
+<section class="sidecard">
+<div class="eyebrow">COLONY HEALTH</div><div class="statrow"><span>Queen</span><b id="queenHealth">100%</b></div><div class="statrow"><span>Scout</span><b id="scoutHealth">100%</b></div><div class="statrow"><span>Workers / soldiers</span><b id="castes">0 / 0</b></div><div class="statrow"><span>Tiles held</span><b id="tiles">1 / 9</b></div><div class="statrow"><span>Weather</span><b id="weather">Warm & dry</b></div><div style="padding-top:12px"><div class="statrow"><span>Backyard campaign</span><b id="campaignPct">0%</b></div><div class="progress"><b id="campaignBar"></b></div></div>
+</section>
+<section class="sidecard compact-info"><div class="eyebrow">FIELD JOURNAL</div><div id="journal" class="log" aria-live="polite"><div class="logline">A young queen has arrived.</div></div></section>
+</aside>
+</div>
+<footer class="footer">An original browser game inspired by classic ant-colony simulators. Not affiliated with Maxis or Electronic Arts. · <a href="../">Hambone Arcade</a></footer>
+</div>
+<div class="modal" id="intro">
+<div class="dialog">
+<div class="heroicon">🐜</div><div class="eyebrow">A WORLD BENEATH YOUR FEET</div>
+<h1>Tiny ants.<br><span>Epic ambitions.</span></h1>
+<p>Build a thriving black-ant colony, gather food, command your golden scout, and push back the rival red ants. Your backyard is waiting.</p>
+<div class="steps"><div class="step"><b>01 — Gather.</b> Tap on food to guide your scout. Workers also forage and follow scent trails.</div><div class="step"><b>02 — Grow.</b> Bring home enough food and the queen will produce new workers and soldiers.</div><div class="step"><b>03 — Conquer.</b> Rally an army, destroy the red queen, and expand into the next patch.</div></div>
+<button class="btn primary start" id="startGame">Start your colony ↗</button><div class="fineprint">Auto-saves on this device · Touch, mouse & keyboard · No sign-in</div>
+</div></div>
+<div class="modal" id="helpDialog" hidden><div class="dialog">
+<div class="eyebrow">FIELD MANUAL</div><h1>How to <span>play.</span></h1>
+<div class="steps">
+<div class="step"><b>Golden scout:</b> Tap or click a destination to move. Tap near a food clump to collect it; return to the black nest to deposit.</div>
+<div class="step"><b>Orders:</b> Forage sends escorts to food, Rally recruits nearby workers, Attack encourages soldier combat, and Defend guards the queen.</div>
+<div class="step"><b>More ants:</b> The queen automatically lays eggs when enough food is stored. Eggs hatch into workers and soldiers.</div>
+<div class="step"><b>Fight:</b> Move your scout or rallied soldiers close to red ants. Destroy the red queen to claim the patch.</div>
+<div class="step"><b>Backyard:</b> After winning a tile, open Backyard and tap an adjacent frontier tile to expand.</div>
+<div class="step"><b>View controls:</b> Drag with two fingers to pan, pinch to zoom, or use + / −. A single tap sets your scout's destination. Mouse wheel zooms; arrow keys move your scout.</div>
+</div><button class="btn primary start" id="closeHelp">Back to colony</button><div class="control-row"><button class="btn subtle" id="resetGame">Reset saved colony</button><button class="btn subtle" id="resumeFromHelp">Resume</button></div>
+</div></div>
+</body></html>
