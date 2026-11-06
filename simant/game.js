@@ -1,0 +1,154 @@
+'use strict';
+/* COLONY — original ant-colony sandbox for Hambone Arcade.
+   No external assets, libraries, accounts, trackers, or network requests. */
+(() => {
+const W=1100,H=730,TAU=Math.PI*2,STORAGE='hambone-colony-v1',BLACK='#1d2221',RED='#ad493c';
+const $=id=>document.getElementById(id),canvas=$('world'),ctx=canvas.getContext('2d',{alpha:false}),mini=$('minimap'),mc=mini.getContext('2d');
+const stage=$('stage'),orders=Array.from(document.querySelectorAll('[data-order]')),views=Array.from(document.querySelectorAll('[data-view]'));
+const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),len=(x,y)=>Math.hypot(x,y),distance=(a,b)=>len(a.x-b.x,a.y-b.y);
+const NEST={black:{x:200,y:367},red:{x:905,y:357}};
+let scale=1,dpr=1,screenW=800,screenH=520,background=null,saved=null,booted=false;
+let camera={x:W/2,y:H/2,zoom:1},game,ants=[],foods=[],rocks=[],plants=[],trails=[],particles=[],spiders=[],eggs=[],touches=new Map(),lastTime=0,uiTimer=0,saveTimer=0,logCount=0,phase=0,weatherClock=0;
+const initialGame=()=>({order:'forage',view:'surface',paused:false,speed:1,food:70,redFood:70,queen:100,redQueen:100,tile:4,claimed:[4],won:false,days:1,elapsed:0,missions:0,seed:Math.floor(Math.random()*1000000)});
+function load(){try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');if(!raw||!Array.isArray(raw.claimed)||!Number.isInteger(raw.tile))return null;return {...initialGame(),...raw,view:'surface',paused:false,speed:1,order:'forage'};}catch(e){return null;}}
+function store(){if(!booted)return;try{const data={...game,view:'surface',paused:false,order:'forage',speed:1};localStorage.setItem(STORAGE,JSON.stringify(data));}catch(e){}}
+function log(msg){const box=$('journal');const div=document.createElement('div');div.className='logline';div.textContent=msg;box.prepend(div);while(box.children.length>4)box.lastElementChild.remove();if(++logCount<3||game&&game.view==='surface')$('tip').textContent=msg;}
+function seedRng(seed){let n=seed>>>0;return()=>{n=(1664525*n+1013904223)>>>0;return n/4294967296;};}
+function makeBackground(){const c=document.createElement('canvas');c.width=W;c.height=H;const b=c.getContext('2d');const rng=seedRng(game.seed+game.tile*1739+42);b.fillStyle='#a9845b';b.fillRect(0,0,W,H);
+for(let i=0;i<20000;i++){const x=rng()*W,y=rng()*H,r=rng()*1.5+.3;b.fillStyle=i%5===0?'#e8bd8090':i%4===0?'#6952355e':'#634d3250';b.fillRect(x,y,r,r);}
+for(let i=0;i<72;i++){const x=rng()*W,y=rng()*H,r=rng()*36+12;const g=b.createRadialGradient(x,y,1,x,y,r);g.addColorStop(0,'#6d945246');g.addColorStop(1,'#71904c00');b.fillStyle=g;b.fillRect(x-r,y-r,r*2,r*2);}
+for(let i=0;i<45;i++){const x=rng()*W,y=rng()*H;b.strokeStyle='#5d674385';b.lineWidth=1.4;for(let j=0;j<4;j++){b.beginPath();b.moveTo(x,y);b.quadraticCurveTo(x+rng()*12-6,y-rng()*9,x+rng()*18-9,y-rng()*22);b.stroke();}}
+background=c;}
+function makeObjects(){const rng=seedRng(game.seed+game.tile*2873+31);rocks=[];plants=[];foods=[];spiders=[];trails=[];particles=[];
+for(let i=0;i<66;i++){let x=24+rng()*(W-48),y=24+rng()*(H-48);if(len(x-NEST.black.x,y-NEST.black.y)<70||len(x-NEST.red.x,y-NEST.red.y)<70)continue;rocks.push({x,y,r:4+rng()*16,shade:rng()});}
+for(let i=0;i<120;i++)plants.push({x:10+rng()*(W-20),y:10+rng()*(H-20),s:4+rng()*13,angle:rng()*TAU});
+for(let i=0;i<25;i++){let x=80+rng()*(W-160),y=60+rng()*(H-120);if(len(x-NEST.black.x,y-NEST.black.y)<90||len(x-NEST.red.x,y-NEST.red.y)<90)continue;foods.push({x,y,amount:7+Math.floor(rng()*15),max:23,r:10+rng()*10});}
+spiders.push({x:W*.54,y:130,health:100,angle:0,attack:0,steps:0});
+makeBackground();}
+let antId=0;
+function addAnt(side,caste='worker',x=null,y=null){const n=NEST[side],a={id:++antId,side,caste,x:x??n.x+rand(-35,35),y:y??n.y+rand(-35,35),angle:rand(0,TAU),speed:rand(35,52),health:caste==='soldier'?85:caste==='scout'?120:45,maximum:caste==='soldier'?85:caste==='scout'?120:45,carry:false,target:null,wander:rand(0,TAU),think:rand(.1,2),attack:0,scent:0,age:0};ants.push(a);return a;}
+function activeAnts(side){return ants.filter(a=>a.side===side&&a.health>0);}
+function spawnPopulation(){ants=[];eggs=[];const count=clamp(13+game.claimed.length*3,14,42);for(let i=0;i<count;i++)addAnt('black',i%5===0?'soldier':'worker');for(let i=0;i<clamp(16+game.claimed.length*4,16,45);i++)addAnt('red',i%4===0?'soldier':'worker');addAnt('black','scout',245,390);}
+function newTile(index,existing=false){game.tile=index;game.redQueen=100;game.queen=clamp(game.queen,55,100);game.food=existing?game.food:Math.max(game.food,75);game.redFood=60+game.claimed.length*5;game.won=false;game.days++;makeObjects();spawnPopulation();centerOnScout(true);log(existing?'Scout reporting to the nest.':'New territory! The red colony is entrenched.');store();}
+function scout(){return ants.find(a=>a.caste==='scout'&&a.side==='black'&&a.health>0);}
+function nearestFood(a){let best=null,score=Infinity;for(const f of foods){if(f.amount<=0)continue;const d=distance(a,f)+(a.side==='black'?Math.max(0,f.x-700)*.18:Math.max(0,400-f.x)*.18);if(d<score){best=f;score=d;}}return best;}
+function targetFor(a){const n=NEST[a.side],enemy=NEST[a.side==='black'?'red':'black'];if(a.caste==='scout')return a.target;
+if(a.carry)return n;
+if(a.caste==='worker'){
+ if(a.side==='black'&&game.order==='rally'&&scout()&&distance(a,scout())<205)return {x:scout().x+rand(-27,27),y:scout().y+rand(-27,27)};
+ const f=nearestFood(a);return f?{x:f.x,y:f.y,ref:f}:n;}
+ if(a.side==='red'){const front=game.redQueen>0?enemy:{x:enemy.x,y:enemy.y};return {x:front.x+rand(-100,100),y:front.y+rand(-115,115)};}
+ if(game.order==='attack')return {x:enemy.x+rand(-50,50),y:enemy.y+rand(-50,50)};
+ if(game.order==='rally'&&scout())return {x:scout().x+rand(-55,55),y:scout().y+rand(-55,55)};
+ if(game.order==='defend')return {x:n.x+rand(-120,120),y:n.y+rand(-110,110)};
+ return {x:n.x+rand(-250,250),y:n.y+rand(-200,200)};
+}
+function moveTo(a,p,dt){if(!p)return;const dx=p.x-a.x,dy=p.y-a.y,d=len(dx,dy);if(d<1)return;const dir=Math.atan2(dy,dx),turn=((dir-a.angle+Math.PI*3)%TAU)-Math.PI;a.angle+=clamp(turn,-dt*8,dt*8);let speed=a.caste==='scout'?118:a.caste==='soldier'?78:a.speed;if(a.carry)speed*=.78;const step=Math.min(d,speed*dt);a.x=clamp(a.x+dx/d*step,14,W-14);a.y=clamp(a.y+dy/d*step,14,H-14);}
+function emit(x,y,color,n=5){for(let i=0;i<n;i++)particles.push({x,y,vx:rand(-65,65),vy:rand(-65,65),t:rand(.25,.55),life:.55,color,r:rand(1.4,4.1)});}
+function killAnt(a){a.health=0;emit(a.x,a.y,a.side==='red'?'#db624e':'#2f3031',6);if(a.caste==='scout'){log('Your scout fell! The colony will send another.');game.scoutRespawn=5;} }
+function fight(a,b,dt){if(a.attack>0||b.health<=0)return;if(distance(a,b)>a.caste==='soldier'?0:0){}const d=distance(a,b);if(d>17)return;a.attack=.52;if(a.side!==b.side){const dmg=(a.caste==='soldier'?18:a.caste==='scout'?15:8)*rand(.7,1.2);b.health-=dmg;emit(b.x,b.y,'#f7ca6c',3);if(b.health<=0)killAnt(b);}}
+function combat(dt){const live=ants.filter(a=>a.health>0);const blacks=live.filter(a=>a.side==='black'),reds=live.filter(a=>a.side==='red');for(const a of live){if(a.attack>0)continue;const opponents=a.side==='black'?reds:blacks;let closest=null,dmin=24;for(const b of opponents){const d=distance(a,b);if(d<dmin){closest=b;dmin=d;}}if(closest)fight(a,closest,dt);
+const enemyNest=NEST[a.side==='black'?'red':'black'];if(distance(a,enemyNest)<33&&(a.caste==='soldier'||a.caste==='scout')&&a.attack<=0){a.attack=.58;const damage=a.caste==='scout'?3.1:1.45;if(a.side==='black'&&game.redQueen>0){game.redQueen=Math.max(0,game.redQueen-damage);emit(enemyNest.x+rand(-8,8),enemyNest.y+rand(-8,8),'#fa8d5a',2);}else if(a.side==='red'&&game.queen>0){game.queen=Math.max(0,game.queen-damage);emit(enemyNest.x+rand(-8,8),enemyNest.y+rand(-8,8),'#f9e2a1',2);}}
+}
+}
+function regenFood(){const f=foods.filter(f=>f.amount>0);if(f.length<8||Math.random()<.008){let x=rand(60,W-60),y=rand(60,H-60);foods.push({x,y,amount:5+Math.floor(rand(0,9)),max:18,r:rand(10,19)});}if(foods.length>60)foods=foods.filter(f=>f.amount>0);}
+function update(dt){if(game.paused||!booted)return;dt=Math.min(dt,0.06)*game.speed;game.elapsed+=dt;phase+=dt;weatherClock+=dt;game.days=1+Math.floor(game.elapsed/28);
+if(game.won||game.queen<=0){updateFX(dt);return;}
+for(const a of ants){if(a.health<=0)continue;a.age+=dt;a.attack=Math.max(0,a.attack-dt);a.think-=dt;if(a.think<=0&&a.caste!=='scout'){a.target=targetFor(a);a.think=rand(.8,2.8);}
+if(a.caste==='scout'&&!a.target){const f=nearestFood(a);if(f&&game.order==='forage'&&distance(a,f)<80)a.target={x:f.x,y:f.y,ref:f};}
+const dest=a.carry?NEST[a.side]:a.target;
+if(dest)moveTo(a,dest,dt);
+if(a.caste==='scout'&&a.target&&distance(a,a.target)<13){a.target=null;}
+if(!a.carry){for(const f of foods){if(f.amount>0&&distance(a,f)<f.r+6&&(a.caste!=='soldier'||a.side==='red')){f.amount--;a.carry=true;a.target={...NEST[a.side]};emit(a.x,a.y,'#eff6ab',2);if(a.caste==='scout')log('Food collected — bring it to your nest!');break;}}}
+if(a.carry&&distance(a,NEST[a.side])<40){a.carry=false;if(a.side==='black'){game.food+=10;if(a.caste==='scout')log('Food delivered. Your queen can raise more ants!');}else game.redFood+=8;a.target=null;emit(a.x,a.y,'#e2eea4',2);}
+a.scent-=dt;if(a.carry&&a.scent<=0){a.scent=.23;trails.push({x:a.x,y:a.y,life:9,side:a.side});}
+}
+ants=ants.filter(a=>a.health>0);
+for(const a of ants)if(a.caste==='scout')a.health=clamp(a.health+dt*.5,0,a.maximum);
+combat(dt);
+for(const s of spiders){s.attack-=dt;s.steps-=dt;const closest=ants.reduce((best,a)=>distance(s,a)<distance(s,best)?a:best,ants[0]);if(closest&&distance(s,closest)<155){const dx=closest.x-s.x,dy=closest.y-s.y,d=len(dx,dy)||1;s.angle=Math.atan2(dy,dx);s.x=clamp(s.x+dx/d*dt*39,20,W-20);s.y=clamp(s.y+dy/d*dt*39,20,H-20);if(d<24&&s.attack<=0){s.attack=.9;closest.health-=27;emit(closest.x,closest.y,'#dfac70',3);if(closest.health<=0)killAnt(closest);}}
+else if(s.steps<=0){s.steps=rand(1.5,4);s.angle=rand(0,TAU);}else{s.x=clamp(s.x+Math.cos(s.angle)*dt*18,25,W-25);s.y=clamp(s.y+Math.sin(s.angle)*dt*18,25,H-25);}}
+if(game.scoutRespawn){game.scoutRespawn-=dt;if(game.scoutRespawn<=0&&game.queen>0){addAnt('black','scout',NEST.black.x+20,NEST.black.y+10);game.scoutRespawn=0;log('A new golden scout is ready!');}}
+game.broodCooldown=(game.broodCooldown||3)-dt;
+if(game.broodCooldown<=0){game.broodCooldown=rand(2.2,4.1);const b=activeAnts('black').length,r=activeAnts('red').length;
+if(game.food>=16&&b<85){game.food-=16;eggs.push({side:'black',time:rand(4,7)});}
+if(game.redFood>=14&&r<75&&game.redQueen>0){game.redFood-=14;eggs.push({side:'red',time:rand(4,7)});}}
+for(const egg of eggs){egg.time-=dt;if(egg.time<=0){const soldiers=activeAnts(egg.side).filter(a=>a.caste==='soldier').length;const count=activeAnts(egg.side).length;addAnt(egg.side,soldiers/count<.25?'soldier':'worker');emit(NEST[egg.side].x,NEST[egg.side].y,'#ede9c8',4);}}
+eggs=eggs.filter(e=>e.time>0);
+if(game.redQueen<=0){game.won=true;game.claimed=Array.from(new Set([...game.claimed,game.tile]));game.missions=3;log(game.claimed.length===9?'The entire backyard is yours! You win!':'The red queen has fallen! Open Backyard to expand.');store();}
+if(game.queen<=0){game.paused=true;log('Your queen has fallen. Start a new colony to try again.');store();}
+if(game.missions===0&&game.food>=105){game.missions=1;log('Your colony is stocked! Grow your population.');}
+if(game.missions===1&&activeAnts('black').length>=25){game.missions=2;log('The army is ready. Defeat the red queen!');}
+regenFood();updateFX(dt);
+}
+function updateFX(dt){for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.t-=dt;}particles=particles.filter(p=>p.t>0);for(const t of trails)t.life-=dt;trails=trails.filter(t=>t.life>0);if(trails.length>700)trails.splice(0,trails.length-700);}
+function bounds(){const minZoom=Math.min(screenW/W,screenH/H)*.93;return{minZoom,maxZoom:minZoom*5};}
+function centerOnScout(reset=false){const s=scout();if(reset){const {minZoom}=bounds();camera.zoom=minZoom*1.12;}camera.x=s?s.x+245:W/2;camera.y=s?s.y: H/2;limitCamera();}
+function limitCamera(){const hw=screenW/(2*camera.zoom),hh=screenH/(2*camera.zoom);camera.x=hw>=W/2?W/2:clamp(camera.x,hw,W-hw);camera.y=hh>=H/2?H/2:clamp(camera.y,hh,H-hh);}
+function resize(){const rect=stage.getBoundingClientRect();screenW=rect.width;screenH=rect.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);camera.zoom=clamp(camera.zoom||bounds().minZoom,bounds().minZoom,bounds().maxZoom);limitCamera();}
+function sx(x){return(x-camera.x)*camera.zoom+screenW/2;}
+function sy(y){return(y-camera.y)*camera.zoom+screenH/2;}
+function worldCoords(px,py){return{x:(px-screenW/2)/camera.zoom+camera.x,y:(py-screenH/2)/camera.zoom+camera.y};}
+function zoom(mult,p={x:screenW/2,y:screenH/2}){const before=worldCoords(p.x,p.y),lim=bounds();camera.zoom=clamp(camera.zoom*mult,lim.minZoom,lim.maxZoom);const after=worldCoords(p.x,p.y);camera.x+=before.x-after.x;camera.y+=before.y-after.y;limitCamera();}
+function circle(x,y,r,color){ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fillStyle=color;ctx.fill();}
+function drawNest(n,side){ctx.save();ctx.translate(n.x,n.y);ctx.fillStyle='#2e261c30';ctx.beginPath();ctx.ellipse(6,8,56,39,0,0,TAU);ctx.fill();ctx.fillStyle=side==='black'?'#6e6046':'#815b42';ctx.beginPath();ctx.ellipse(0,0,46,32,0,0,TAU);ctx.fill();ctx.fillStyle='#403128';ctx.beginPath();ctx.ellipse(0,0,27,17,0,0,TAU);ctx.fill();ctx.strokeStyle=side==='black'?'#eeeab7':'#f29a83';ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.beginPath();ctx.ellipse(0,0,56,41,0,0,TAU);ctx.stroke();ctx.setLineDash([]);circle(-10,-4,5,'#231a16');circle(9,2,4,'#1f1914');ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 16px system-ui';ctx.fillStyle='#fff2c9';ctx.strokeStyle='#352719';ctx.lineWidth=4;const title=side==='black'?'BLACK NEST':'RED NEST';ctx.strokeText(title,0,-56);ctx.fillText(title,0,-56);ctx.restore();}
+function drawAnt(a){ctx.save();ctx.translate(a.x,a.y);ctx.rotate(a.angle);const isScout=a.caste==='scout',r=isScout?1.25:a.caste==='soldier'?1.12:1;ctx.scale(r,r);ctx.shadowBlur=5;ctx.shadowColor='#130c0960';ctx.fillStyle=a.side==='red'?RED:isScout?'#f4d15c':BLACK;const color=ctx.fillStyle;ctx.lineCap='round';ctx.strokeStyle=color;ctx.lineWidth=1.7;for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(-3,i*3);ctx.lineTo(-10,i*7-5);ctx.moveTo(1,i*3);ctx.lineTo(7,i*7+5);ctx.stroke();}ctx.beginPath();ctx.moveTo(10,-2);ctx.lineTo(16,-8);ctx.moveTo(10,2);ctx.lineTo(16,8);ctx.stroke();ctx.shadowBlur=0;ctx.beginPath();ctx.ellipse(-10,0,6,5,0,0,TAU);ctx.ellipse(0,0,5.5,4,0,0,TAU);ctx.ellipse(9,0,5.4,5,0,0,TAU);ctx.fillStyle=color;ctx.fill();circle(11,-2,1,'#fbf7df');circle(11,2,1,'#fbf7df');if(a.carry){circle(-17,-4,6,'#d9ef9e');circle(-20,-7,2,'#fff9ca');}ctx.restore();
+if(a.caste==='scout'){ctx.save();ctx.strokeStyle='#fdf3a8';ctx.lineWidth=2.5;ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(a.x,a.y,26+Math.sin(phase*4)*2,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.textAlign='center';ctx.font='bold 13px system-ui';ctx.strokeStyle='#3b2d22';ctx.lineWidth=3;ctx.strokeText('YOU',a.x,a.y-34);ctx.fillStyle='#fff1a4';ctx.fillText('YOU',a.x,a.y-34);ctx.restore();}}
+function drawSpider(s){ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.angle);ctx.strokeStyle='#342a27';ctx.lineWidth=3.5;ctx.lineCap='round';for(let i=0;i<4;i++){for(const sign of [-1,1]){ctx.beginPath();ctx.moveTo(i*5-10,sign*3);ctx.lineTo(i*6-15,sign*(15+Math.sin(phase*7+i)*3));ctx.lineTo(i*5-13,sign*25);ctx.stroke();}}circle(-4,0,12,'#46332b');circle(10,0,8,'#544037');circle(15,-3,2,'#eaac75');circle(15,3,2,'#eaac75');ctx.restore();}
+function drawSurface(){ctx.fillStyle='#a9845b';ctx.fillRect(0,0,screenW,screenH);ctx.save();ctx.translate(screenW/2,screenH/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);ctx.drawImage(background,0,0);ctx.strokeStyle='#675333';ctx.lineWidth=8;ctx.strokeRect(1,1,W-2,H-2);
+for(const r of rocks){circle(r.x+2,r.y+4,r.r,'#69574659');circle(r.x,r.y,r.r,'#9d9a89');circle(r.x-r.r*.3,r.y-r.r*.3,r.r*.46,'#d4c8a8');}
+for(const p of plants){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);ctx.strokeStyle='#4c793e';ctx.lineWidth=2.4;for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo((i-2)*p.s*.8,-p.s*.4,(i-1.5)*p.s,p.s*(i%2?-.8:.7));ctx.stroke();}ctx.restore();}
+for(const t of trails)circle(t.x,t.y,3.8,t.side==='red'?'rgba(210,72,57,'+(t.life/9*.24)+')':'rgba(222,250,140,'+(t.life/9*.24)+')');
+for(const f of foods){if(f.amount<=0)continue;circle(f.x+2,f.y+4,f.r+5,'#4c6e3140');for(let j=0;j<Math.min(f.amount,16);j++){const a=j*2.399,r=Math.sqrt(j+1)/4.5*f.r;circle(f.x+Math.cos(a)*r,f.y+Math.sin(a)*r,3.5+(j%3),'#8bac58');circle(f.x+Math.cos(a)*r-1,f.y+Math.sin(a)*r-1,1.5,'#d9e78b');}}
+drawNest(NEST.black,'black');if(game.redQueen>0)drawNest(NEST.red,'red');else circle(NEST.red.x,NEST.red.y,43,'#584b33');
+for(const a of ants)if(a.health>0&&a.caste!=='scout')drawAnt(a);for(const s of spiders)drawSpider(s);for(const a of ants)if(a.health>0&&a.caste==='scout')drawAnt(a);
+for(const p of particles){ctx.globalAlpha=clamp(p.t/p.life,0,1);circle(p.x,p.y,p.r,p.color);}ctx.globalAlpha=1;
+const s=scout();if(s&&s.target&&!s.carry){ctx.setLineDash([8,10]);ctx.lineWidth=2;ctx.strokeStyle='#ffeb8bc9';ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.target.x,s.target.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#fff6c7';ctx.lineWidth=2;ctx.beginPath();ctx.arc(s.target.x,s.target.y,12+Math.sin(phase*5)*2,0,TAU);ctx.stroke();}
+ctx.restore();
+if(game.won)drawBanner('PATCH SECURED','Open Backyard to conquer the next patch','VICTORY');else if(game.queen<=0)drawBanner('COLONY LOST','Restart to begin a new colony','DEFEAT');
+else if(game.paused)drawBanner('PAUSED','Tap Resume to continue','');
+}
+function drawBanner(title,sub,eyebrow){ctx.save();ctx.fillStyle='#0a1912ab';ctx.fillRect(0,0,screenW,screenH);ctx.fillStyle='#f0f0cd';ctx.textAlign='center';ctx.font='800 13px system-ui';ctx.fillText(eyebrow,screenW/2,screenH/2-41);ctx.font='900 '+Math.min(36,screenW/10)+'px system-ui';ctx.fillText(title,screenW/2,screenH/2+1);ctx.font='500 13px system-ui';ctx.fillText(sub,screenW/2,screenH/2+26);ctx.restore();}
+function drawNestView(){const w=screenW,h=screenH;ctx.fillStyle='#8e6d49';ctx.fillRect(0,0,w,h);const line=Math.max(72,h*.20);ctx.fillStyle='#63824d';ctx.fillRect(0,0,w,line);ctx.fillStyle='#82a968';for(let i=0;i<w;i+=28){ctx.beginPath();ctx.moveTo(i,line);ctx.lineTo(i+8,line-13);ctx.lineTo(i+11,line);ctx.fill();}
+const cx=w*.5,cy=h*.55;const chambers=[{x:cx,y:cy-h*.14,rx:w*.16,ry:h*.115,name:'QUEEN CHAMBER'},{x:cx-w*.23,y:cy+h*.13,rx:w*.17,ry:h*.11,name:'FOOD STORE'},{x:cx+w*.22,y:cy+h*.13,rx:w*.18,ry:h*.11,name:'NURSERY'}];ctx.strokeStyle='#4d3224';ctx.lineWidth=clamp(w*.025,10,32);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx,line-5);ctx.lineTo(cx,cy-h*.14);ctx.lineTo(cx-w*.22,cy+h*.13);ctx.moveTo(cx,cy-h*.14);ctx.lineTo(cx+w*.22,cy+h*.13);ctx.stroke();for(const c of chambers){ctx.fillStyle='#443021';ctx.beginPath();ctx.ellipse(c.x,c.y,c.rx,c.ry,0,0,TAU);ctx.fill();ctx.strokeStyle='#c49a66';ctx.lineWidth=5;ctx.stroke();ctx.textAlign='center';ctx.font='800 '+clamp(w*.016,10,14)+'px system-ui';ctx.fillStyle='#f2dda3';ctx.fillText(c.name,c.x,c.y-c.ry-13);}
+let c=chambers[0];ctx.fillStyle='#d6b686';ctx.beginPath();ctx.ellipse(c.x,c.y,22,13,0,0,TAU);ctx.fill();circle(c.x+18,c.y,10,'#e6cda0');for(let i=0;i<Math.min(14,game.food/12);i++)circle(chambers[1].x-32+(i%7)*10,chambers[1].y-7+Math.floor(i/7)*12,7,'#c6e48c');for(let i=0;i<Math.min(15,eggs.filter(e=>e.side==='black').length+5);i++){ctx.fillStyle='#e7d8aa';ctx.beginPath();ctx.ellipse(chambers[2].x-35+(i%6)*12,chambers[2].y-13+Math.floor(i/6)*14,5,8,0,0,TAU);ctx.fill();}
+ctx.textAlign='center';ctx.font='bold 13px system-ui';ctx.fillStyle='#fcf3da';ctx.fillText('Your workers dug a safe network of tunnels.',w/2,h-20);
+}
+function tileIsFrontier(i){if(game.claimed.includes(i))return false;return game.claimed.some(c=>Math.abs((c%3)-(i%3))+Math.abs(Math.floor(c/3)-Math.floor(i/3))===1);}
+function drawYard(){const w=screenW,h=screenH;ctx.fillStyle='#506942';ctx.fillRect(0,0,w,h);const size=Math.min((w-44)/3,(h-100)/3),x0=(w-3*size)/2,y0=(h-3*size)/2+15;for(let i=0;i<9;i++){const x=x0+(i%3)*size,y=y0+Math.floor(i/3)*size,claimed=game.claimed.includes(i),front=tileIsFrontier(i);ctx.fillStyle=claimed?'#92ae64':front?'#ad976a':'#687e59';ctx.strokeStyle=i===game.tile?'#f9e99b':'#e6d9ad65';ctx.lineWidth=i===game.tile?5:2;ctx.fillRect(x+4,y+4,size-8,size-8);ctx.strokeRect(x+4,y+4,size-8,size-8);const rng=seedRng(i*37+2);for(let j=0;j<13;j++){ctx.fillStyle=claimed?'#618047':front?'#897a52':'#526b46';circle(x+13+rng()*(size-26),y+13+rng()*(size-26),1+rng()*4,ctx.fillStyle);}
+ctx.textAlign='center';ctx.font='800 '+clamp(size*.23,14,25)+'px system-ui';ctx.fillStyle='#f3eed5';ctx.fillText(claimed?'✓':front?'!':'•',x+size/2,y+size/2+6);if(i===game.tile){ctx.fillStyle='#263e29';ctx.font='bold 10px system-ui';ctx.fillText('CURRENT',x+size/2,y+size-17);}}
+ctx.fillStyle='#f6edce';ctx.font='900 '+clamp(w*.043,17,28)+'px system-ui';ctx.textAlign='center';ctx.fillText('THE BACKYARD',w/2,34);ctx.font='500 12px system-ui';ctx.fillText(game.won?'Tap a frontier tile marked ! to expand.':'Defeat the red queen to unlock the next territory.',w/2,h-23);
+game.yardRect={x:x0,y:y0,size};if(game.claimed.length===9)drawBanner('YARD CONQUERED','All nine territories belong to the black ants.','CAMPAIGN COMPLETE');
+}
+function drawMini(){const w=mini.width,h=mini.height;mc.fillStyle='#9a8758';mc.fillRect(0,0,w,h);mc.fillStyle='#5f7848';for(const f of foods){if(f.amount<=0)continue;mc.fillRect(f.x/W*w-1,f.y/H*h-1,3,3);}for(const a of ants){if(a.health<=0)continue;mc.fillStyle=a.side==='red'?'#e96d5c':a.caste==='scout'?'#ffe58f':'#202e25';mc.fillRect(a.x/W*w-1,a.y/H*h-1,3,3);}for(const side of ['black','red']){const n=NEST[side];mc.beginPath();mc.arc(n.x/W*w,n.y/H*h,5,0,TAU);mc.fillStyle=side==='red'?'#f2695c':'#e6ddaa';mc.fill();}const left=camera.x-screenW/(2*camera.zoom),top=camera.y-screenH/(2*camera.zoom);mc.lineWidth=2;mc.strokeStyle='#fffde7';mc.strokeRect(left/W*w,top/H*h,screenW/camera.zoom/W*w,screenH/camera.zoom/H*h);}
+function render(){if(!ctx)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,screenW,screenH);if(game.view==='surface')drawSurface();else if(game.view==='nest')drawNestView();else drawYard();drawMini();}
+function updateUI(){const b=activeAnts('black'),r=activeAnts('red'),s=scout();$('blacks').textContent=b.length;$('reds').textContent=r.length;$('food').textContent=Math.floor(game.food);$('eggs').textContent=eggs.filter(e=>e.side==='black').length;$('queenHealth').textContent=Math.ceil(game.queen)+'%';$('scoutHealth').textContent=s?Math.ceil(s.health/s.maximum*100)+'%':'Rehatching';$('castes').textContent=b.filter(a=>a.caste==='worker').length+' / '+b.filter(a=>a.caste==='soldier').length;$('tiles').textContent=game.claimed.length+' / 9';$('campaignPct').textContent=Math.floor(game.claimed.length/9*100)+'%';$('campaignBar').style.width=(game.claimed.length/9*100)+'%';$('weather').textContent=Math.floor(game.elapsed/44)%4===3?'Cloudy':'Warm & dry';
+$('missionLabel').textContent='DAY '+game.days+' · TILE '+(game.tile+1);$('missionTitle').textContent=game.queen<=0?'Queen lost — restart':game.claimed.length===9?'The whole yard is yours!':game.won?'Territory won — expand':game.missions===0?'Gather 105 stored food':game.missions===1?'Raise 25 black ants':'Defeat the red queen';
+$('pause').textContent=game.paused?'▶ Resume':'Ⅱ Pause';$('pause').setAttribute('aria-pressed',String(game.paused));$('speed').textContent=game.speed+'× speed';orders.forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.order===game.order)));views.forEach(el=>{const active=el.dataset.view===game.view;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});
+$('viewTitle').textContent=game.view==='surface'?'THE SURFACE':game.view==='nest'?'UNDERGROUND NEST':'BACKYARD OVERVIEW';$('viewSubtitle').textContent=game.view==='surface'?'Tap to direct your golden scout':game.view==='nest'?'Watch the queen and nursery':'Secure territory. Expand outward.';
+$('minimap').style.display=game.view==='surface'?'block':'none';$('orderTitle').textContent=game.order==='attack'?'Take the offensive':game.order==='defend'?'Guard the colony':game.order==='rally'?'Rally the troops':'Lead your ants';
+}
+function order(name){game.order=name;log(name==='attack'?'Soldiers advance toward the red nest.':name==='defend'?'Soldiers guard the queen.':name==='rally'?'Nearby ants are gathering around your scout.':'Workers are seeking out food.');updateUI();}
+function view(name){game.view=name;updateUI();}
+orders.forEach(el=>el.addEventListener('click',()=>order(el.dataset.order)));views.forEach(el=>el.addEventListener('click',()=>view(el.dataset.view)));
+$('pause').addEventListener('click',()=>{game.paused=!game.paused;updateUI();});$('speed').addEventListener('click',()=>{game.speed=game.speed===1?2:game.speed===2?3:.5===game.speed?1:.5;updateUI();});
+$('zoomIn').addEventListener('click',()=>zoom(1.27));$('zoomOut').addEventListener('click',()=>zoom(1/1.27));$('center').addEventListener('click',()=>centerOnScout(false));
+$('help').addEventListener('click',()=>{$('helpDialog').hidden=false;game.paused=true;updateUI();});$('closeHelp').addEventListener('click',()=>{$('helpDialog').hidden=true;game.paused=false;updateUI();});$('resumeFromHelp').addEventListener('click',()=>{$('helpDialog').hidden=true;game.paused=false;updateUI();});
+function reset(){try{localStorage.removeItem(STORAGE);}catch(e){}game=initialGame();newTile(4,true);game.missions=0;game.elapsed=0;game.days=1;game.scoutRespawn=0;game.broodCooldown=2;$('helpDialog').hidden=true;game.paused=false;updateUI();store();}
+$('newGame').addEventListener('click',()=>{if(confirm('Start a new colony and erase your current progress?'))reset();});
+$('resetGame').addEventListener('click',()=>{if(confirm('Erase your saved colony and start over?'))reset();});
+$('startGame').addEventListener('click',()=>{$('intro').hidden=true;booted=true;game.paused=false;store();updateUI();});
+function yardClick(p){if(!game.won||!game.yardRect)return;const r=game.yardRect;const col=Math.floor((p.x-r.x)/r.size),row=Math.floor((p.y-r.y)/r.size);if(col<0||col>2||row<0||row>2)return;const tile=row*3+col;if(tileIsFrontier(tile)){game.missions=2;newTile(tile);game.view='surface';updateUI();}else if(!game.claimed.includes(tile))log('Secure a neighboring territory first.');}
+function handleTap(x,y){if(game.view==='yard'){yardClick({x,y});return;}if(game.view!=='surface'||game.won||game.queen<=0)return;const pos=worldCoords(x,y),s=scout();if(!s)return;s.target={x:clamp(pos.x,12,W-12),y:clamp(pos.y,12,H-12)};if(game.order==='attack'&&distance(pos,NEST.red)<65)log('Scout ordered to strike at the red nest.');}
+function eventPosition(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+let lastPinch=null;
+canvas.addEventListener('pointerdown',e=>{if(e.button===2)e.preventDefault();canvas.setPointerCapture(e.pointerId);const p=eventPosition(e);touches.set(e.pointerId,{...p,startX:p.x,startY:p.y,button:e.button});if(touches.size===2)lastPinch=null;});
+canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;const p=eventPosition(e),t=touches.get(e.pointerId);t.x=p.x;t.y=p.y;const arr=Array.from(touches.values());if(arr.length===2){const a=arr[0],b=arr[1],mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},sep=len(a.x-b.x,a.y-b.y);if(lastPinch){camera.x-=(mid.x-lastPinch.mid.x)/camera.zoom;camera.y-=(mid.y-lastPinch.mid.y)/camera.zoom;zoom(sep/Math.max(1,lastPinch.sep),mid);}lastPinch={mid,sep};limitCamera();}else if(arr.length===1&&t.button===2){camera.x+=(t.startX-t.x)/camera.zoom;camera.y+=(t.startY-t.y)/camera.zoom;t.startX=t.x;t.startY=t.y;limitCamera();}});
+function endPointer(e){const t=touches.get(e.pointerId);if(!t)return;touches.delete(e.pointerId);if(touches.size===0){if(len(t.x-t.startX,t.y-t.startY)<16&&!lastPinch&&t.button!==2)handleTap(t.x,t.y);lastPinch=null;}}
+canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);lastPinch=null;});canvas.addEventListener('contextmenu',e=>e.preventDefault());canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.14:.87,eventPosition(e));},{passive:false});
+window.addEventListener('keydown',e=>{if($('intro').hidden===false||$('helpDialog').hidden===false)return;const map={ArrowUp:[0,-64],ArrowDown:[0,64],ArrowLeft:[-64,0],ArrowRight:[64,0],w:[0,-64],s:[0,64],a:[-64,0],d:[64,0]};if(map[e.key]&&game.view==='surface'){e.preventDefault();const s=scout();if(s)s.target={x:clamp(s.x+map[e.key][0],0,W),y:clamp(s.y+map[e.key][1],0,H)};}if(e.code==='Space'){e.preventDefault();game.paused=!game.paused;updateUI();}});
+window.addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{if(document.hidden)store();});window.addEventListener('pagehide',store);
+function loop(now){const dt=lastTime?Math.min((now-lastTime)/1000,.05):.016;lastTime=now;update(dt);render();uiTimer+=dt;saveTimer+=dt;if(uiTimer>.3){uiTimer=0;updateUI();}if(saveTimer>11){saveTimer=0;store();}requestAnimationFrame(loop);}
+function bootstrap(){saved=load();game=saved||initialGame();makeObjects();spawnPopulation();resize();centerOnScout(true);game.broodCooldown=2;booted=!!saved;if(saved){$('intro').hidden=true;log('Welcome back. Your colony has been restored.');}else{$('intro').hidden=false;game.paused=true;log('The queen has founded a new nest.');}updateUI();requestAnimationFrame(loop);}
+bootstrap();
+})();
