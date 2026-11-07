@@ -172,16 +172,30 @@ Victory has an unmistakable state: slowed action, short colony celebration, a pa
 - [ ] Automated seeded combat/economy balance tests and phone/tablet browser playtesting.
 - **Exit criterion:** A complete campaign can be won and lost, saved and resumed without dead ends.
 
-## Current implementation versus plan
+## Current implementation versus plan — First Light rebuild (November 7, 2026)
 
-Already present as of this design:
-- Browser-hosted surface simulation, live black/red ants, food harvesting, simplified queen combat and predators.
-- Basic selection/group orders, workers/soldiers recruitment and food-funded upgrades.
-- A richly illustrated *read-only* underground cross-section with visible ant activity, chambers and nest zoom/pan.
-- Nine-tile backyard map, local saves and offline PWA.
-- Initial functional and integration tests.
+The previous sandbox was intentionally **removed**, not incrementally updated. The live source now implements the first complete *First Light* mission using a new engine and new local save format.
 
-**Not yet implemented**: authoritative physically traversable multi-layer world, actual worker excavation, true nest supply deliveries, dynamic objective engine and first-mission victory sequence, differentiated mission types, real full campaign content, sophisticated pathfinding and red AI. These are planned work—not features to claim as completed.
+**Implemented in the new game:**
+- Exactly one playable scenario, starting with four workers, one scout, a queen and 25 food.
+- Five event-based objectives, completion rewards, and clear defeat/victory states.
+- One authoritative ant population spanning two environments through a physical portal.
+- Surface resource nodes, real food carrying, connected tunnel pathfinding and actual granary delivery.
+- Persistent soil excavation marked in the nest and performed by moving workers.
+- Nursery construction after six cells are dug, brood queue, soldier training and limited food.
+- Player squad selection, surface movement/gather/defend/attack commands and touch camera controls.
+- Enemy raid that travels through the surface entrance into the queen's tunnels, and a destructible red outpost.
+- Illustrated procedural surface and underground environments, local saves and offline PWA.
+- Automated simulation tests, including a start-to-victory First Light playthrough.
+
+**Still to build:**
+- Flexible, player-placed room geometries beyond the fixed tutorial nursery.
+- Brood handling/transport to alternate chambers and multiple live queen colonies.
+- More sophisticated terrain obstacles, weather, predators and enemy strategy.
+- The broader differentiated nine-territory campaign, house-edge epilogue and permanent branching upgrades.
+- Deep mobile-browser/device playtesting and balance across genuinely different player strategies.
+
+The original design's first-mission values were tuned during implementation: workers cost 18 food, soldiers 30, and the nursery 45. The red raid was reduced to three attackers after automated playthroughs showed the initial five-attacker assault was not survivable for a standard starter army.
 
 ## One non-negotiable principle
 
