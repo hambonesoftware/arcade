@@ -14,8 +14,8 @@ An original mobile-first, browser-playable ant-colony strategy game, inspired by
 - Watch free-roaming predators, pheromone scent trails and food stores in the surface simulation.
 - Three views: interactive surface, animated nest cross-section, and a **3×3 backyard conquest map**.
 - Conquer a patch by defeating the red queen, then select a neighboring frontier territory on the Backyard map.
-- Responsive on iPhone, iPad and desktop; pinch to zoom, two-finger pan, mouse wheel, +/− zoom and keyboard movement.
-- Auto-saved colony campaign in localStorage and optional offline install via service worker.
+- Responsive on iPhone, iPad and desktop; compact in-world mobile orders, one-finger drag to pan, pinch to zoom, mouse wheel, +/− zoom and keyboard movement.
+- Auto-saved **individual ant positions, health, targets, food patches, brood, predators, and colony campaign** in localStorage, plus optional offline install via service worker.
 - Entirely self-contained HTML, JavaScript, CSS and original SVG artwork. No backend and no dependencies.
 
 ## How to play
@@ -27,6 +27,11 @@ An original mobile-first, browser-playable ant-colony strategy game, inspired by
 5. Conquer all nine patches to win.
 
 Use **Guide** for control instructions and a Reset action. Use **Pause** to suspend the simulation. Speed cycles through 1×, 2×, 3×, and 0.5×.
+
+## Tests
+
+From the Arcade repository root, run `npm test`. The checks cover game JavaScript syntax and the Colony first-launch, quick-order/view interaction, snapshot restoration and tap-versus-drag behavior (alongside the shared Arcade HUD tests).
+
 
 ## Publishing
 
