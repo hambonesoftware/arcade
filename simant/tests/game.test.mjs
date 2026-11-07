@@ -182,3 +182,17 @@ test('surface and nest renderer draw new simulation without old assets',()=>{
   assert.doesNotThrow(()=>window.ColonyRender.zoom(cams.nest,1.4,p,'nest',390,540));
   assert.ok(Number.isFinite(window.ColonyRender.locate(p.x,p.y,'nest',390,540,cams.nest).x));
 });
+
+test('nursery construction requires actual connected excavated tunnels',()=>{
+  const {Engine:e}=environment(),state=e.create(117);
+  state.mission.step=1;
+  state.mission.cells=[1,1,1,1,1,1];
+  state.food=150;
+  assert.equal(e.nurseryConnected(state),false);
+  assert.equal(e.buildNursery(state),false,'six arbitrary cells cannot create a disconnected nursery');
+  assert.equal(state.nest.nursery,false);
+  assert.ok(e.planNest(state),'players can recover by marking the nursery passage');
+  for(let i=0;i<1800&&!e.nurseryConnected(state);i++)e.update(state,1/30);
+  assert.equal(e.nurseryConnected(state),true);
+  assert.equal(e.buildNursery(state),true);
+});
