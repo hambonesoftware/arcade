@@ -10,6 +10,7 @@
   const cameras={surface:{x:0,y:0,zoom:1},nest:{x:0,y:0,zoom:1}};
   let state=null,rafLast=0,accumulator=0,clock=0,autosave=0,uiDelay=0,lastStep=-1,firstResize=true,screen={w:400,h:570,dpr:1};
   let touches=new Map(),pinch=null,selectionBox=null;
+  let wasPausedBeforeHelp=false;
   function save(){
     if(!state||state.firstLaunch)return;
     try{localStorage.setItem(SAVE,JSON.stringify({...state,paused:false,firstLaunch:false}));}catch(e){}
@@ -218,8 +219,8 @@
   $('zoomOut').addEventListener('click',()=>R.zoom(cameras[state.view],1/1.28,{x:screen.w/2,y:screen.h/2},state.view,screen.w,screen.h));
   $('center').addEventListener('click',focusObjective);
   $('startGame').addEventListener('click',start);
-  $('help').addEventListener('click',()=>{$('helpDialog').hidden=false;state.paused=true;updateUI();});
-  $('closeHelp').addEventListener('click',()=>{$('helpDialog').hidden=true;state.paused=false;updateUI();});
+  $('help').addEventListener('click',()=>{wasPausedBeforeHelp=state.paused;$('helpDialog').hidden=false;state.paused=true;updateUI();});
+  $('closeHelp').addEventListener('click',()=>{$('helpDialog').hidden=true;state.paused=wasPausedBeforeHelp||!$('intro').hidden||!!state.ended;updateUI();});
   $('retry').addEventListener('click',fresh);
   $('newGame').addEventListener('click',()=>{if(confirm('Restart First Light? Current progress will be replaced.'))fresh();});
   window.addEventListener('keydown',e=>{
