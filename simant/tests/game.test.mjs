@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 
 const gameSource = readFileSync(new URL('../game.js', import.meta.url), 'utf8');
+const nestSource = readFileSync(new URL('../nest.js', import.meta.url), 'utf8');
 
 function makeRuntime(storage = {}) {
   const elements = new Map();
@@ -11,7 +12,9 @@ function makeRuntime(storage = {}) {
   const documentEvents = new Map();
   const noop = () => {};
   const context = new Proxy({
-    createRadialGradient() { return { addColorStop() {} }; }
+    createRadialGradient() { return { addColorStop() {} }; },
+    createLinearGradient() { return { addColorStop() {} }; },
+    measureText(text) { return { width: String(text).length * 7 }; }
   }, {
     get(object, prop) {
       return prop in object ? object[prop] : noop;
@@ -51,6 +54,9 @@ function makeRuntime(storage = {}) {
       '[data-view]': { names: ['surface', 'nest', 'yard'], key: 'view' },
       '[data-group]': { names: ['scout', 'worker', 'soldier', 'all'], key: 'group' },
       '[data-recruit]': { names: ['worker', 'soldier'], key: 'recruit' },
+      '[data-build]': { names: ['nursery', 'storage', 'gate'], key: 'build' },
+      '[data-group]': { names: ['scout', 'worker', 'soldier', 'all'], key: 'group' },
+      '[data-recruit]': { names: ['worker', 'soldier'], key: 'recruit' },
       '[data-build]': { names: ['nursery', 'storage', 'gate'], key: 'build' }
     };
     const mapping = mappings[selector];
@@ -84,12 +90,14 @@ function makeRuntime(storage = {}) {
     removeItem(key) { delete storage[key]; }
   };
   let callback = null;
-  runInNewContext(gameSource, {
+  const sandbox = {
     window, document, localStorage,
     requestAnimationFrame(fn) { callback = fn; },
     confirm: () => true,
     console, setTimeout, clearTimeout
-  }, { timeout: 10000 });
+  };
+  runInNewContext(nestSource, sandbox, { timeout: 10000 });
+  runInNewContext(gameSource, sandbox, { timeout: 10000 });
   function frame(timestamp = 16) {
     assert.equal(typeof callback, 'function');
     callback(timestamp);
@@ -98,7 +106,7 @@ function makeRuntime(storage = {}) {
     assert.ok(windowEvents.has('pagehide'));
     windowEvents.get('pagehide')();
   }
-  return { el: makeElement, frame, storage, triggerPageHide };
+  return { el: makeElement, frame, storage, triggerPageHide, window };
 }
 
 test('starts a new playable colony with both species and a mission', () => {
@@ -217,4 +225,73 @@ test('mouse selection rectangle selects an ant squad without moving the camera',
   canvas.trigger('pointermove', { pointerId: 3, button: 0, pointerType: 'mouse', clientX: 280, clientY: 375 });
   canvas.trigger('pointerup', { pointerId: 3, button: 0, pointerType: 'mouse', clientX: 280, clientY: 375 });
   assert.match(app.el('selectionCount').textContent, /selected/);
+});
+
+
+test('RTS group selection issues an explicit command to multiple workers', () => {
+  const app = makeRuntime();
+  app.el('startGame').trigger('click');
+  app.el('groupworker').trigger('click');
+  const n = Number(app.el('selectionCount').textContent.split(' ')[0]);
+  assert.ok(n >= 8, 'expected worker group to be selectable');
+  const canvas = app.el('world');
+  const destination = { pointerId: 55, button: 2, clientX: 330, clientY: 260, pointerType: 'mouse' };
+  canvas.trigger('pointerdown', destination);
+  canvas.trigger('pointerup', destination);
+  app.triggerPageHide();
+  const saved = JSON.parse(app.storage['hambone-colony-v1']);
+  assert.equal(saved.selected.length, n);
+  const commanded = saved.snapshot.ants.filter(a => a.side === 'black' && a.caste === 'worker' && a.manual);
+  assert.equal(commanded.length, n);
+  assert.ok(commanded.every(a => a.manual.type === 'move' || a.manual.type === 'gather'));
+});
+
+test('recruitment spends stored food and queues the correct caste', () => {
+  const app = makeRuntime();
+  app.el('startGame').trigger('click');
+  app.el('recruitsoldier').trigger('click');
+  app.triggerPageHide();
+  const saved = JSON.parse(app.storage['hambone-colony-v1']);
+  assert.equal(saved.food, 32);
+  assert.ok(saved.snapshot.eggs.some(egg => egg.side === 'black' && egg.caste === 'soldier'));
+});
+
+test('nest upgrades use the same stored-food economy and persist', () => {
+  const storage = {};
+  const app = makeRuntime(storage);
+  app.el('startGame').trigger('click');
+  app.el('buildgate').trigger('click');
+  app.triggerPageHide();
+  const saved = JSON.parse(storage['hambone-colony-v1']);
+  assert.equal(saved.food, 0);
+  assert.equal(saved.upgrades.gate, 1);
+  const resumed = makeRuntime(storage);
+  resumed.frame();
+  assert.equal(resumed.el('gateCost').textContent, '130 food · Lv 1');
+});
+
+test('nest cross-section renders and chamber hit testing works in portrait and landscape', () => {
+  const app = makeRuntime();
+  app.el('startGame').trigger('click');
+  app.el('viewnest').trigger('click');
+  app.frame(100);
+  assert.equal(typeof app.window.ColonyNest.draw, 'function');
+  assert.equal(app.window.ColonyNest.pick(195, 156, 390, 550), 'queen');
+  assert.equal(app.window.ColonyNest.pick(490, 266, 980, 680), 'queen');
+  assert.equal(app.window.ColonyNest.pick(10, 670, 980, 680), null);
+});
+
+test('detailed nest can be selected without affecting the surface population', () => {
+  const app = makeRuntime();
+  app.el('startGame').trigger('click');
+  app.el('viewnest').trigger('click');
+  app.frame(100);
+  const before = Number(app.el('blacks').textContent);
+  const canvas = app.el('world');
+  const p = {pointerId: 73, button: 0, clientX: 195, clientY: 156, pointerType: 'touch'};
+  canvas.trigger('pointerdown', p);
+  canvas.trigger('pointerup', p);
+  app.frame(120);
+  assert.equal(Number(app.el('blacks').textContent), before);
+  assert.match(app.el('tip').textContent, /Royal chamber/i);
 });
