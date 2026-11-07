@@ -1,4 +1,4 @@
-const VERSION='hambone-firstlight-v6-20261107';
+const VERSION='hambone-firstlight-v7-20261107';
 const CORE=['./','./index.html','./firstlight.js','./engine.js','./renderer.js','./game.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(VERSION).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>(key.startsWith('hambone-colony-')||key.startsWith('hambone-firstlight-'))&&key!==VERSION).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
