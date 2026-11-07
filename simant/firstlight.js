@@ -52,7 +52,7 @@
       case 3:return {...s,progress:clamp(state.raidElapsed/45,0,1),counter:Math.floor(state.raidElapsed)+' / 45 seconds survived'};
       case 4:return {...s,progress:clamp((1-state.outpostHealth/95)*.7+Math.min(state.outpostHold,16)/16*.3,0,1),
         counter:state.outpostHealth>0?'Outpost health '+Math.ceil(state.outpostHealth)+'%':'Territory held '+Math.floor(Math.min(state.outpostHold,16))+' / 16s'};
-      default:return {id:'victory',title:'First Light secured!',hint:'Your colony is ready to spread into the backyard.',label:'MISSION COMPLETE',action:'Open Backyard',counter:'5 / 5 objectives',progress:1};
+      default:return {id:'victory',title:'First Light secured!',hint:'Your colony is ready to spread into the backyard.',label:'MISSION COMPLETE',action:'Review victory',counter:'5 / 5 objectives',progress:1};
     }
   }
   window.ColonyFirstLight={OUTPOST,BORDER,STEPS,fresh,normalize,dug,completion,objective};
