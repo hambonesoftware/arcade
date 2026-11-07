@@ -40,11 +40,30 @@
             ['larvae','refuse'], ['storage','larvae']]
   };
   const rooms = new Map();
+  const viewport = {zoom:1,panX:0,panY:0};
   function configuration(w, h) {
     const model = w / h > 1.12 ? landscape : portrait;
-    const scale = Math.min(w / model.width, h / model.height);
-    return { model, scale, dx: (w-model.width*scale)/2, dy: (h-model.height*scale)/2 };
+    const scale = Math.min(w / model.width, h / model.height)*viewport.zoom;
+    return { model, scale, dx: (w-model.width*scale)/2+viewport.panX, dy: (h-model.height*scale)/2+viewport.panY };
   }
+  function limit(w,h){
+    const layout=configuration(w,h),spanW=layout.model.width*layout.scale,spanH=layout.model.height*layout.scale;
+    const margin=48;
+    const minDx=Math.min((w-spanW)/2,w-spanW)-margin,maxDx=Math.max((w-spanW)/2,0)+margin;
+    const minDy=Math.min((h-spanH)/2,h-spanH)-margin,maxDy=Math.max((h-spanH)/2,0)+margin;
+    const desiredX=clamp(layout.dx,minDx,maxDx),desiredY=clamp(layout.dy,minDy,maxDy);
+    viewport.panX+=desiredX-layout.dx;viewport.panY+=desiredY-layout.dy;
+  }
+  function pan(dx,dy,w,h){viewport.panX+=dx;viewport.panY+=dy;limit(w,h);}
+  function zoom(factor,x,y,w,h){
+    const old=configuration(w,h),mx=(x-old.dx)/old.scale,my=(y-old.dy)/old.scale;
+    viewport.zoom=clamp(viewport.zoom*factor,1,3.25);
+    const next=configuration(w,h);
+    viewport.panX+=x-(next.dx+mx*next.scale);
+    viewport.panY+=y-(next.dy+my*next.scale);
+    limit(w,h);
+  }
+  function reset(){viewport.zoom=1;viewport.panX=0;viewport.panY=0;}
   function mapPoint(name, model) {
     if (name === 'entrance') return model.entrance;
     return model.chambers.find(room => room.id === name);
@@ -339,5 +358,5 @@
     }
     return found;
   }
-  window.ColonyNest={draw,pick};
+  window.ColonyNest={draw,pick,pan,zoom,reset};
 })();
