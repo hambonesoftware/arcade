@@ -103,7 +103,7 @@
       if(b.dataset.mode==='dig')b.hidden=state.mission.step!==1||state.view!=='nest';
     });
     $('nestTools').hidden=state.mission.step!==1;
-    $('planDig').disabled=state.nest.digQueue.length>=12||E.ColonyFirstLightDug?.(state.mission)===6;
+    $('planDig').disabled=state.nest.digQueue.length>=12||state.mission.cells.filter(v=>v>=1).length>=6;
     $('buildNursery').disabled=state.nest.nursery||state.mission.cells.filter(v=>v>=1).length<6||state.food<45;
     $('trainSoldier').disabled=!E.canTrain(state,'soldier');
     $('trainWorker').disabled=!E.canTrain(state,'worker');
