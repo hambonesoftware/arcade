@@ -1,297 +1,184 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 
-const gameSource = readFileSync(new URL('../game.js', import.meta.url), 'utf8');
-const nestSource = readFileSync(new URL('../nest.js', import.meta.url), 'utf8');
-
-function makeRuntime(storage = {}) {
-  const elements = new Map();
-  const windowEvents = new Map();
-  const documentEvents = new Map();
-  const noop = () => {};
-  const context = new Proxy({
-    createRadialGradient() { return { addColorStop() {} }; },
-    createLinearGradient() { return { addColorStop() {} }; },
-    measureText(text) { return { width: String(text).length * 7 }; }
-  }, {
-    get(object, prop) {
-      return prop in object ? object[prop] : noop;
-    },
-    set(object, prop, value) { object[prop] = value; return true; }
+const load=p=>readFileSync(new URL(p,import.meta.url),'utf8');
+const scripts={
+  firstlight:load('../firstlight.js'),
+  engine:load('../engine.js'),
+  renderer:load('../renderer.js'),
+  ui:load('../game.js'),
+  html:load('../index.html')
+};
+function environment(){
+  const window={};
+  runInNewContext(scripts.firstlight,{window},{timeout:10000});
+  runInNewContext(scripts.engine,{window},{timeout:10000});
+  return {window,Engine:window.ColonyEngine,Mission:window.ColonyFirstLight};
+}
+function advance(engine,state,frames){for(let i=0;i<frames;i++)engine.update(state,1/30);}
+function completeFood(e,s,limit=3000){
+  for(let i=0;i<limit&&s.mission.step===0&&!s.ended;i++)e.update(s,1/30);
+  assert.equal(s.mission.step,1,'workers must deliver food to unlock digging');
+}
+function completeDig(e,s,limit=2500){
+  assert.ok(e.planNest(s));
+  for(let i=0;i<limit&&s.mission.cells.filter(v=>v>=1).length<6;i++)e.update(s,1/30);
+  assert.equal(s.mission.cells.filter(v=>v>=1).length,6,'six tunnels must be physically excavated');
+  assert.equal(e.buildNursery(s),true);
+  e.update(s,1/30);
+  assert.equal(s.mission.step,2);
+}
+function runtimeCanvas(){
+  const noop=()=>{};
+  const gradient=()=>({addColorStop(){}});
+  const context=new Proxy({createLinearGradient:gradient,createRadialGradient:gradient,measureText:x=>({width:x.length*7})},{
+    get(target,key){return key in target?target[key]:noop},
+    set(target,key,value){target[key]=value;return true;}
   });
-  const makeElement = id => {
-    if (elements.has(id)) return elements.get(id);
-    const attributes = new Map();
-    const listeners = new Map();
-    const node = {
-      id, width: 244, height: 164, hidden: false,
-      style: {}, children: [], dataset: {}, textContent: '',
-      classList: { add: noop, remove: noop, toggle: noop },
-      addEventListener(name, callback) { listeners.set(name, callback); },
-      trigger(name, event = {}) {
-        if (!listeners.has(name)) throw new Error('Missing ' + name + ' handler for ' + id);
-        listeners.get(name)(event);
-      },
-      setAttribute(name, value) { attributes.set(name, value); },
-      getAttribute(name) { return attributes.get(name); },
-      getContext() { return context; },
-      getBoundingClientRect() { return { left: 0, top: 0, width: 390, height: 550 }; },
-      appendChild(child) { this.children.push(child); },
-      prepend(child) { this.children.unshift(child); },
-      remove() { this.removed = true; },
-      setPointerCapture: noop,
-      get lastElementChild() { return this.children[this.children.length - 1] || null; }
-    };
-    elements.set(id, node);
-    return node;
-  };
-  const buttons = selector => {
-    const mappings = {
-      '[data-order]': { names: ['forage', 'rally', 'attack', 'defend'], key: 'order' },
-      '[data-quick-order]': { names: ['forage', 'rally', 'attack', 'defend'], key: 'quickOrder' },
-      '[data-view]': { names: ['surface', 'nest', 'yard'], key: 'view' },
-      '[data-group]': { names: ['scout', 'worker', 'soldier', 'all'], key: 'group' },
-      '[data-recruit]': { names: ['worker', 'soldier'], key: 'recruit' },
-      '[data-build]': { names: ['nursery', 'storage', 'gate'], key: 'build' },
-      '[data-group]': { names: ['scout', 'worker', 'soldier', 'all'], key: 'group' },
-      '[data-recruit]': { names: ['worker', 'soldier'], key: 'recruit' },
-      '[data-build]': { names: ['nursery', 'storage', 'gate'], key: 'build' }
-    };
-    const mapping = mappings[selector];
-    if (!mapping) throw new Error('Unexpected selector: ' + selector);
-    return mapping.names.map(name => {
-      const element = makeElement(mapping.key + name);
-      element.dataset[mapping.key] = name;
-      return element;
-    });
-  };
-  const document = {
-    getElementById: makeElement,
-    createElement(tag) {
-      if (tag === 'canvas') {
-        const canvas = makeElement('offscreen');
-        canvas.getContext = () => context;
-        return canvas;
-      }
-      return makeElement('transient' + Math.random());
-    },
-    querySelectorAll: buttons,
-    addEventListener(name, callback) { documentEvents.set(name, callback); }
-  };
-  const window = {
-    devicePixelRatio: 2,
-    addEventListener(name, callback) { windowEvents.set(name, callback); }
-  };
-  const localStorage = {
-    getItem(key) { return storage[key] || null; },
-    setItem(key, value) { storage[key] = value; },
-    removeItem(key) { delete storage[key]; }
-  };
-  let callback = null;
-  const sandbox = {
-    window, document, localStorage,
-    requestAnimationFrame(fn) { callback = fn; },
-    confirm: () => true,
-    console, setTimeout, clearTimeout
-  };
-  runInNewContext(nestSource, sandbox, { timeout: 10000 });
-  runInNewContext(gameSource, sandbox, { timeout: 10000 });
-  function frame(timestamp = 16) {
-    assert.equal(typeof callback, 'function');
-    callback(timestamp);
-  }
-  function triggerPageHide() {
-    assert.ok(windowEvents.has('pagehide'));
-    windowEvents.get('pagehide')();
-  }
-  return { el: makeElement, frame, storage, triggerPageHide, window };
+  const document={createElement(){return{width:800,height:500,getContext:()=>context}}};
+  return {context,document};
 }
 
-test('starts a new playable colony with both species and a mission', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  app.frame();
-  assert.equal(app.el('intro').hidden, true);
-  assert.equal(Number(app.el('blacks').textContent), 17);
-  assert.equal(Number(app.el('reds').textContent), 20);
-  assert.equal(Number(app.el('food').textContent), 70);
-  assert.match(app.el('missionTitle').textContent, /Gather/);
+test('First Light launches a completely fresh scenario, not the old sandbox',()=>{
+  const {Engine:e}=environment(),s=e.create(11);
+  assert.equal(s.schema,2);
+  assert.equal(s.food,25);
+  assert.equal(s.mission.step,0);
+  assert.equal(s.queenHP,100);
+  assert.equal(s.ants.filter(a=>a.role==='worker').length,4);
+  assert.equal(s.ants.filter(a=>a.role==='soldier').length,0);
+  assert.equal(s.ants.filter(a=>a.role==='scout').length,1);
+  assert.equal(s.nest.nursery,false);
+  assert.equal(s.ants.filter(a=>a.side==='red').length,0);
+  assert.equal(scripts.ui.includes('hambone-colony-v1'),false);
+  assert.equal(scripts.html.includes('nest.js'),false);
+  assert.ok(scripts.html.includes('firstlight.js'));
 });
 
-test('the mobile quick command rail controls strategy and the view switch works', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  app.el('quickOrderattack').trigger('click');
-  assert.equal(app.el('orderTitle').textContent, 'Take the offensive');
-  assert.equal(app.el('quickOrderattack').getAttribute('aria-pressed'), 'true');
-  app.el('viewyard').trigger('click');
-  app.frame();
-  assert.equal(app.el('viewTitle').textContent, 'BACKYARD OVERVIEW');
-  app.el('viewnest').trigger('click');
-  app.frame(32);
-  assert.equal(app.el('viewTitle').textContent, 'UNDERGROUND NEST');
+test('workers really carry food between surface and connected granary',()=>{
+  const {Engine:e}=environment(),s=e.create(30);
+  let carried=false,nestDeposits=0,previousFood=25;
+  for(let i=0;i<500;i++){
+    e.update(s,1/30);
+    if(s.ants.some(a=>a.role==='worker'&&a.carry>0))carried=true;
+    if(s.food>previousFood)nestDeposits++;
+    previousFood=s.food;
+  }
+  assert.ok(carried,'worker must pick up a visible food load');
+  assert.ok(nestDeposits>=3,'worker must physically deposit more than one load');
+  assert.ok(s.mission.delivered>=45);
+  assert.ok(s.food>25);
 });
 
-test('saves and restores the individual colony members and food patches', () => {
-  const saved = {};
-  const first = makeRuntime(saved);
-  first.el('startGame').trigger('click');
-  first.frame();
-  first.triggerPageHide();
-  assert.ok(saved['hambone-colony-v1']);
-  const data = JSON.parse(saved['hambone-colony-v1']);
-  assert.ok(data.snapshot.ants.length > 30);
-  assert.ok(data.snapshot.foods.length > 10);
-  data.snapshot.ants = data.snapshot.ants.filter(a => a.caste === 'scout').slice(0, 1);
-  data.snapshot.foods = data.snapshot.foods.slice(0, 1);
-  saved['hambone-colony-v1'] = JSON.stringify(data);
-  const reopened = makeRuntime(saved);
-  reopened.frame();
-  assert.equal(reopened.el('intro').hidden, true);
-  assert.equal(Number(reopened.el('blacks').textContent), 1);
-  assert.equal(Number(reopened.el('reds').textContent), 0);
+test('workers stay inside excavated underground cells and follow marked dig paths',()=>{
+  const {Engine:e}=environment(),s=e.create(31),K=e.constants;
+  completeFood(e,s);
+  e.planNest(s);
+  for(let i=0;i<650;i++){
+    e.update(s,1/30);
+    for(const a of s.ants.filter(a=>a.layer==='nest'&&a.hp>0)){
+      const c=Math.max(0,Math.min(K.C-1,Math.floor(a.x/K.CELL)));
+      const r=Math.max(0,Math.min(K.R-1,Math.floor(a.y/K.CELL)));
+      assert.equal(s.nest.cells[r*K.C+c],1,'ant '+a.id+' crossed solid underground soil');
+    }
+  }
+  assert.equal(s.mission.cells.filter(v=>v>=1).length,6);
+  assert.equal(s.nest.digQueue.length,0);
 });
 
-test('a touch click orders the scout, but a drag pans instead of reordering', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  const canvas = app.el('world');
-  const touch = { pointerId: 1, button: 0, clientX: 292, clientY: 250 };
-  canvas.trigger('pointerdown', touch);
-  canvas.trigger('pointerup', touch);
-  app.triggerPageHide();
-  let state = JSON.parse(app.storage['hambone-colony-v1']);
-  let scout = state.snapshot.ants.find(a => a.caste === 'scout');
-  assert.ok(scout?.target);
-  const previous = JSON.stringify(scout.target);
-  canvas.trigger('pointerdown', { pointerId: 2, button: 0, clientX: 180, clientY: 280 });
-  canvas.trigger('pointermove', { pointerId: 2, button: 0, clientX: 250, clientY: 280 });
-  canvas.trigger('pointerup', { pointerId: 2, button: 0, clientX: 250, clientY: 280 });
-  app.triggerPageHide();
-  state = JSON.parse(app.storage['hambone-colony-v1']);
-  scout = state.snapshot.ants.find(a => a.caste === 'scout');
-  assert.equal(JSON.stringify(scout.target), previous);
+test('digging and building are genuine mission prerequisites and cost food',()=>{
+  const {Engine:e}=environment(),s=e.create(49);
+  completeFood(e,s);
+  assert.equal(e.buildNursery(s),false,'nursery cannot be built before excavation');
+  completeDig(e,s);
+  assert.equal(s.nest.nursery,true);
+  assert.ok(s.nest.cells.filter(x=>x===1).length>=22);
+  assert.ok(s.mission.step===2);
 });
 
-test('group selection issues RTS commands to multiple workers', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  app.el('groupworker').trigger('click');
-  const selected = Number(app.el('selectionCount').textContent.split(' ')[0]);
-  assert.ok(selected > 7);
-  const world = app.el('world');
-  world.trigger('pointerdown', { pointerId: 11, button: 0, clientX: 335, clientY: 340, pointerType: 'touch' });
-  world.trigger('pointerup', { pointerId: 11, button: 0, clientX: 335, clientY: 340, pointerType: 'touch' });
-  app.triggerPageHide();
-  const data = JSON.parse(app.storage['hambone-colony-v1']);
-  const ordered = data.snapshot.ants.filter(a => a.side === 'black' && a.caste === 'worker' && a.manual);
-  assert.ok(ordered.length > 7);
+test('RTS selection and manual orders move chosen workers',()=>{
+  const {Engine:e}=environment(),s=e.create(51);
+  e.selectGroup(s,'worker');
+  assert.equal(s.selected.length,4);
+  e.setMode(s,'move');
+  e.issue(s,{x:495,y:325});
+  advance(e,s,260);
+  const chosen=e.selected(s);
+  assert.ok(chosen.some(a=>a.layer==='surface'&&a.x>200),'selected worker should honor movement command');
+  assert.ok(chosen.every(a=>a.stance==='move'||a.stance==='auto'));
+  assert.ok(!s.ended);
 });
 
-test('recruitment consumes food, adds a specific caste, and preserves the queue in saves', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  app.el('recruitsoldier').trigger('click');
-  app.triggerPageHide();
-  const data = JSON.parse(app.storage['hambone-colony-v1']);
-  assert.equal(data.food, 32);
-  assert.ok(data.snapshot.eggs.some(e => e.side === 'black' && e.caste === 'soldier' && e.trained));
+test('soldier training is locked until the nursery and costs food',()=>{
+  const {Engine:e}=environment(),s=e.create(52);
+  assert.equal(e.train(s,'soldier'),false);
+  completeFood(e,s);
+  completeDig(e,s);
+  const before=s.food;
+  assert.equal(e.train(s,'soldier'),true);
+  assert.equal(s.food,before-30);
+  advance(e,s,240);
+  assert.ok(s.ants.some(a=>a.role==='soldier'));
 });
 
-test('nest upgrade costs food and persists the upgraded nursery', () => {
-  const saved = {};
-  const app = makeRuntime(saved);
-  app.el('startGame').trigger('click');
-  // Default nursery costs 85; provide the extra food through a saved state.
-  app.triggerPageHide();
-  const old = JSON.parse(saved['hambone-colony-v1']);
-  old.food = 150;
-  saved['hambone-colony-v1'] = JSON.stringify(old);
-  const reopened = makeRuntime(saved);
-  reopened.el('buildnursery').trigger('click');
-  reopened.triggerPageHide();
-  const updated = JSON.parse(saved['hambone-colony-v1']);
-  assert.equal(updated.upgrades.nursery, 1);
-  assert.equal(updated.food, 65);
+test('complete First Light: food, excavation, holding the border, raid and outpost',()=>{
+  const {Engine:e}=environment(),s=e.create(78);
+  completeFood(e,s);
+  completeDig(e,s);
+  for(let i=0;i<3;i++)assert.equal(e.train(s,'soldier'),true);
+  advance(e,s,240);
+  e.selectGroup(s,'soldier');
+  e.setMode(s,'move');
+  e.issue(s,e.constants.BORDER);
+  for(let i=0;i<1500&&s.mission.step===2;i++)e.update(s,1/30);
+  assert.equal(s.mission.step,3,'the contested border must unlock a raid');
+  for(let i=0;i<1800&&s.mission.step===3&&!s.ended;i++)e.update(s,1/30);
+  assert.equal(s.mission.step,4,'the colony must survive the raid');
+  assert.ok(s.queenHP>0,'the queen must survive a reasonably defended raid');
+  e.selectGroup(s,'soldier');
+  e.setMode(s,'attack');
+  e.issue(s,e.constants.OUTPOST);
+  for(let i=0;i<1800&&s.mission.step===4&&!s.ended;i++)e.update(s,1/30);
+  assert.equal(s.ended,'victory');
+  assert.equal(s.mission.step,5);
+  assert.equal(s.mission.outpostHealth,0);
+  assert.equal(s.mission.outpostHold,16);
 });
 
-test('mouse selection rectangle selects an ant squad without moving the camera', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  const canvas = app.el('world');
-  canvas.trigger('pointerdown', { pointerId: 3, button: 0, pointerType: 'mouse', clientX: 50, clientY: 175 });
-  canvas.trigger('pointermove', { pointerId: 3, button: 0, pointerType: 'mouse', clientX: 280, clientY: 375 });
-  canvas.trigger('pointerup', { pointerId: 3, button: 0, pointerType: 'mouse', clientX: 280, clientY: 375 });
-  assert.match(app.el('selectionCount').textContent, /selected/);
+test('queen death produces a definitive defeat, not an endless simulation',()=>{
+  const {Engine:e}=environment(),s=e.create(80);
+  s.queenHP=0;e.update(s,1/30);
+  assert.equal(s.ended,'defeat');
+  assert.equal(s.paused,true);
 });
 
-
-test('RTS group selection issues an explicit command to multiple workers', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  app.el('groupworker').trigger('click');
-  const n = Number(app.el('selectionCount').textContent.split(' ')[0]);
-  assert.ok(n >= 8, 'expected worker group to be selectable');
-  const canvas = app.el('world');
-  const destination = { pointerId: 55, button: 2, clientX: 225, clientY: 360, pointerType: 'mouse', preventDefault() {} };
-  canvas.trigger('pointerdown', destination);
-  canvas.trigger('pointerup', destination);
-  app.triggerPageHide();
-  const saved = JSON.parse(app.storage['hambone-colony-v1']);
-  assert.equal(saved.selected.length, n);
-  const commanded = saved.snapshot.ants.filter(a => a.side === 'black' && a.caste === 'worker' && a.manual);
-  assert.equal(commanded.length, n);
-  assert.ok(commanded.every(a => a.manual.type === 'move' || a.manual.type === 'gather'));
+test('saved state restores connected tunnels, objective progress and unit IDs',()=>{
+  const {Engine:e}=environment(),s=e.create(91);
+  completeFood(e,s);e.planNest(s);advance(e,s,300);
+  const snapshot=JSON.stringify(s);
+  const restored=e.normalize(JSON.parse(snapshot));
+  assert.ok(restored);
+  assert.equal(restored.seed,s.seed);
+  assert.equal(restored.mission.step,s.mission.step);
+  assert.equal(restored.mission.delivered,s.mission.delivered);
+  assert.deepEqual([...restored.nest.cells],[...s.nest.cells]);
+  const priorIds=new Set(s.ants.map(a=>a.id));
+  advance(e,restored,100);
+  assert.ok(restored.ants.some(a=>priorIds.has(a.id)));
+  assert.equal(e.normalize({schema:1,ants:[],nest:{cells:[]}}),null);
 });
 
-test('recruitment spends stored food and queues the correct caste', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  app.el('recruitsoldier').trigger('click');
-  app.triggerPageHide();
-  const saved = JSON.parse(app.storage['hambone-colony-v1']);
-  assert.equal(saved.food, 32);
-  assert.ok(saved.snapshot.eggs.some(egg => egg.side === 'black' && egg.caste === 'soldier'));
-});
-
-test('nest upgrades use the same stored-food economy and persist', () => {
-  const storage = {};
-  const app = makeRuntime(storage);
-  app.el('startGame').trigger('click');
-  app.el('buildgate').trigger('click');
-  app.triggerPageHide();
-  const saved = JSON.parse(storage['hambone-colony-v1']);
-  assert.equal(saved.food, 0);
-  assert.equal(saved.upgrades.gate, 1);
-  const resumed = makeRuntime(storage);
-  resumed.frame();
-  assert.equal(resumed.el('gateCost').textContent, '130 food · Lv 1');
-});
-
-test('nest cross-section renders and chamber hit testing works in portrait and landscape', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  app.el('viewnest').trigger('click');
-  app.frame(100);
-  assert.equal(typeof app.window.ColonyNest.draw, 'function');
-  assert.equal(app.window.ColonyNest.pick(195, 156, 390, 550), 'queen');
-  assert.equal(app.window.ColonyNest.pick(490, 266, 980, 680), 'queen');
-  assert.equal(app.window.ColonyNest.pick(10, 670, 980, 680), null);
-});
-
-test('detailed nest can be selected without affecting the surface population', () => {
-  const app = makeRuntime();
-  app.el('startGame').trigger('click');
-  app.el('viewnest').trigger('click');
-  app.frame(100);
-  const before = Number(app.el('blacks').textContent);
-  const canvas = app.el('world');
-  const p = {pointerId: 73, button: 0, clientX: 195, clientY: 156, pointerType: 'touch'};
-  canvas.trigger('pointerdown', p);
-  canvas.trigger('pointerup', p);
-  app.frame(120);
-  assert.equal(Number(app.el('blacks').textContent), before);
-  assert.match(app.el('tip').textContent, /Royal chamber/i);
+test('surface and nest renderer draw new simulation without old assets',()=>{
+  const {window,Engine:e}=environment();
+  const {context,document}=runtimeCanvas();
+  runInNewContext(scripts.renderer,{window,document},{timeout:10000});
+  const s=e.create(111),cams={surface:{x:0,y:0,zoom:1},nest:{x:0,y:0,zoom:1}};
+  assert.doesNotThrow(()=>window.ColonyRender.draw(context,s,390,540,cams,0));
+  s.view='nest';
+  assert.doesNotThrow(()=>window.ColonyRender.draw(context,s,390,540,cams,0));
+  const p={x:195,y:270};
+  assert.doesNotThrow(()=>window.ColonyRender.zoom(cams.nest,1.4,p,'nest',390,540));
+  assert.ok(Number.isFinite(window.ColonyRender.locate(p.x,p.y,'nest',390,540,cams.nest).x));
 });
