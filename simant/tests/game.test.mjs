@@ -235,7 +235,7 @@ test('RTS group selection issues an explicit command to multiple workers', () =>
   const n = Number(app.el('selectionCount').textContent.split(' ')[0]);
   assert.ok(n >= 8, 'expected worker group to be selectable');
   const canvas = app.el('world');
-  const destination = { pointerId: 55, button: 2, clientX: 330, clientY: 260, pointerType: 'mouse' };
+  const destination = { pointerId: 55, button: 2, clientX: 225, clientY: 360, pointerType: 'mouse' };
   canvas.trigger('pointerdown', destination);
   canvas.trigger('pointerup', destination);
   app.triggerPageHide();
