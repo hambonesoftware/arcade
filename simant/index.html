@@ -52,6 +52,13 @@ button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto
 .build-row small{color:#c3cdae;font-size:10px;font-weight:600;display:block;margin-top:3px}
 .build-row em{font-style:normal;color:#e9d194;font-size:11px;white-space:nowrap}
 @media(max-width:650px){.rts-strip{gap:5px;padding:6px}.selection-status{min-width:89px}.selection-status strong{font-size:10px}.unit-chip{padding:5px 8px;font-size:10px;min-height:42px}}
+
+/* Keep the nest and backyard camera immersive: field orders belong on the surface. */
+.stage[data-view="nest"] .quick-orders,.stage[data-view="yard"] .quick-orders{display:none}
+.stage[data-view="nest"] #minimap,.stage[data-view="yard"] #minimap{display:none}
+.stage[data-view="nest"] #world{cursor:grab}
+.stage[data-view="nest"] #world:active{cursor:grabbing}
+.stage[data-view="nest"] .terrain-title{background:#1e2019e8;border-color:#aa9770}
 </style>
 <script src="./nest.js" defer></script>
 <script src="./game.js" defer></script>
