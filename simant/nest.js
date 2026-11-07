@@ -56,6 +56,18 @@
     ctx.bezierCurveTo(a.x + Math.sign(dx)*bend, a.y+dy*.44,
                       b.x - Math.sign(dx)*bend, b.y-dy*.44, b.x,b.y);
   }
+  function tunnelPosition(a,b,t) {
+    const dx=b.x-a.x,dy=b.y-a.y;
+    const bend=Math.min(90,Math.abs(dx)*.26+Math.abs(dy)*.12);
+    const p1={x:a.x+Math.sign(dx)*bend,y:a.y+dy*.44};
+    const p2={x:b.x-Math.sign(dx)*bend,y:b.y-dy*.44};
+    const u=1-t;
+    const x=u*u*u*a.x+3*u*u*t*p1.x+3*u*t*t*p2.x+t*t*t*b.x;
+    const y=u*u*u*a.y+3*u*u*t*p1.y+3*u*t*t*p2.y+t*t*t*b.y;
+    const vx=3*u*u*(p1.x-a.x)+6*u*t*(p2.x-p1.x)+3*t*t*(b.x-p2.x);
+    const vy=3*u*u*(p1.y-a.y)+6*u*t*(p2.y-p1.y)+3*t*t*(b.y-p2.y);
+    return {x,y,angle:Math.atan2(vy,vx)};
+  }
   function seedRandom(seed) {
     let s = seed >>> 0;
     return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
@@ -285,9 +297,9 @@
       const a=mapPoint(edge[0],model),b=mapPoint(edge[1],model);
       let t=(phase*(antState.caste==='soldier'?.09:.12)+(id*.137))%2;
       if(t>1)t=2-t;
-      const x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;
-      const tangent=Math.atan2(b.y-a.y,b.x-a.x)+(Math.sin(phase*.38+id)>0?0:Math.PI);
-      ant(ctx,x,y,antState.caste==='soldier'?.74:.61,tangent,'#33271f',!!antState.carry);
+      const pos=tunnelPosition(a,b,t);
+      const tangent=pos.angle+(Math.sin(phase*.38+id)>0?0:Math.PI);
+      ant(ctx,pos.x,pos.y,antState.caste==='soldier'?.74:.61,tangent,'#33271f',!!antState.carry);
     }
     // Scouts/foragers march across the mound, visible from inside the cutaway.
     const en=model.entrance;
