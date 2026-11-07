@@ -3,148 +3,256 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#17231d">
-<meta name="description" content="Colony: a playful browser ant colony simulation inspired by classic 1990s simulation games.">
+<meta name="theme-color" content="#212b20">
+<meta name="description" content="Colony: First Light. Build a living nest, forage and dig tunnels, train an army, and survive a red-ant raid in this original browser RTS.">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon.svg">
 <link rel="manifest" href="./manifest.webmanifest">
-<title>COLONY — Ant World</title>
+<title>COLONY — First Light</title>
 <style>
-:root{color-scheme:dark;--bg:#0f1915;--panel:#1b2921;--panel2:#223328;--line:#3b4c39;--ink:#f3edda;--muted:#b2baa8;--leaf:#d2ee83;--gold:#f8c970;--red:#f17f69;--shadow:0 18px 60px #050b07a6}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);overscroll-behavior:none}
-body{background:radial-gradient(ellipse at 20% -8%,#354b30 0,transparent 32%),radial-gradient(ellipse at 99% 95%,#253e31 0,transparent 35%),var(--bg)}button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
-button:focus-visible,input:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
-button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto;padding:15px 18px max(18px,env(safe-area-inset-bottom))}
-.top{display:flex;align-items:center;gap:20px;justify-content:space-between;margin-bottom:13px}.brand{display:flex;align-items:center;gap:11px;min-width:0}.brandmark{width:43px;height:43px;display:grid;place-items:center;background:#d7e99b;border-radius:14px;color:#28341d;box-shadow:inset 0 -5px #adbf7c;font-size:24px;flex:none}.brandtitle{font-weight:950;letter-spacing:-.065em;font-size:clamp(24px,3vw,35px);line-height:1}.brandtitle span{color:#dbef93}.brandsub{color:#aebba7;font-size:10px;letter-spacing:.16em;font-weight:800;margin-top:5px}.top-actions{display:flex;gap:8px;align-items:center;white-space:nowrap}
-.btn{border:1px solid #435441;color:var(--ink);background:#25362b;border-radius:12px;padding:10px 13px;font-weight:800;font-size:12px;min-height:39px}.btn:hover{background:#34523b}.btn.primary{background:var(--leaf);color:#1f2e19;border-color:transparent}.btn.warning{background:#f3b65e;color:#201a0b;border-color:transparent}.btn.active{background:#e9efb4;color:#24321d;border-color:transparent}.btn.subtle{background:#1b2b23}.btn:active{transform:translateY(1px)}
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:13px;align-items:stretch}.gamecol{min-width:0}.statusbar{display:grid;grid-template-columns:1.45fr repeat(4,1fr);gap:9px;margin-bottom:10px}.metric{border:1px solid #344438;background:linear-gradient(145deg,#26392b,#1a2921);border-radius:15px;min-height:65px;padding:10px 13px;display:flex;justify-content:center;flex-direction:column}.metric small{color:#abb8a5;text-transform:uppercase;letter-spacing:.12em;font-weight:850;font-size:10px}.metric strong{font-size:clamp(18px,2vw,24px);font-variant-numeric:tabular-nums;line-height:1.2}.metric.primarymetric{background:linear-gradient(120deg,#394d30,#263d31);border-color:#66814d}.metric.primarymetric strong{font-size:16px;color:#f1f5d2}.metric strong.red{color:#ef9780}.metric strong.green{color:#d3f193}
-.stage{position:relative;min-height:400px;height:clamp(410px,62vh,730px);overflow:hidden;border:2px solid #5f704d;border-radius:20px;background:#a47e56;box-shadow:var(--shadow);touch-action:none;isolation:isolate}
-#world{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
-.terrain-title{position:absolute;top:13px;left:14px;pointer-events:none;border:1px solid #fff4;background:#14251edb;border-radius:12px;padding:8px 12px;backdrop-filter:blur(10px)}.terrain-title strong{display:block;font-size:12px;letter-spacing:.04em}.terrain-title span{color:#c4d0b4;font-size:11px}
-.stage-actions{position:absolute;top:12px;right:12px;display:flex;gap:5px}
-.quick-orders{display:none;position:absolute;top:68px;left:8px;flex-direction:column;gap:5px;z-index:2}.quick-order{width:57px;height:49px;border-radius:11px;border:1px solid #ecedc04d;color:#f8f6dc;background:#15271ddc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;backdrop-filter:blur(9px);font-size:19px;line-height:1}.quick-order span{font-size:9px;line-height:1;font-weight:850}.quick-order[aria-pressed="true"]{background:#e3edb4;color:#243522;border-color:#e3edb4;box-shadow:0 2px 12px #0005}.iconbtn{width:38px;height:38px;display:grid;place-items:center;background:#1c2b24e6;border:1px solid #ffffff44;border-radius:11px;color:#f6efd9;font-size:21px;box-shadow:0 4px 10px #0003}
-#minimap{position:absolute;bottom:13px;right:13px;width:122px;height:82px;border:2px solid #e5e4bc;border-radius:8px;background:#40533c;box-shadow:0 4px 12px #0006;pointer-events:auto;touch-action:none;cursor:pointer}
-.context{position:absolute;bottom:13px;left:14px;display:flex;align-items:center;gap:8px;max-width:calc(100% - 154px);background:#14221de8;border:1px solid #d8dab03b;border-radius:13px;padding:8px 11px;font-weight:700;font-size:11px;color:#eff5d9;backdrop-filter:blur(10px)}.context .dot{width:8px;height:8px;background:#e9c272;border-radius:100%;box-shadow:0 0 0 4px #e9c27230;flex:none}
-.tabbar{display:flex;align-items:center;gap:8px;padding-top:10px;flex-wrap:wrap}.tabbar .btn{flex:1;min-width:90px}.tabbar .spacer{flex:1}
-.side{display:flex;flex-direction:column;gap:11px}.sidecard{background:linear-gradient(155deg,#22342a,#192720);border:1px solid #46543d;border-radius:18px;padding:17px}.eyebrow{font-size:10px;letter-spacing:.16em;color:#c2d18c;font-weight:900;text-transform:uppercase;margin-bottom:9px}.sidecard h2{font-size:22px;letter-spacing:-.04em;margin:0 0 9px;line-height:1.1}.sidecard p{font-size:13px;line-height:1.52;color:#b7c2b0;margin:0 0 12px}.progress{height:9px;background:#15231b;border-radius:20px;overflow:hidden;border:1px solid #526245}.progress b{height:100%;display:block;width:0%;background:linear-gradient(90deg,#d6ef8a,#f6d18a);transition:width .3s}
-.statrow{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #ffffff16;font-size:12px}.statrow:last-child{border-bottom:0}.statrow span{color:#b6c5b2}.statrow b{color:#f6f4dc;font-variant-numeric:tabular-nums}
-.group{display:grid;grid-template-columns:1fr 1fr;gap:7px}.command{min-height:49px;padding:10px;border:1px solid #4e6049;border-radius:11px;background:#2b4030;color:#f5f3df;text-align:left;font-weight:850;font-size:12px}.command small{display:block;font-size:10px;opacity:.74;margin-top:3px;font-weight:600}.command[aria-pressed="true"]{background:#dcebb0;color:#23321e;border-color:#dcebb0}.command:hover{border-color:#dcebb0}.hint{color:#c5c6ac;font-size:11px;line-height:1.48;margin-top:9px}.log{display:flex;flex-direction:column;gap:8px}.logline{font-size:11px;color:#c3cbb5;line-height:1.4;padding-left:11px;border-left:2px solid #849e65}
-.footer{color:#83968a;font-size:11px;text-align:center;margin-top:13px}.footer a{color:#c2d791}
-.modal{position:fixed;inset:0;background:#07100bdc;display:grid;place-items:center;padding:18px;z-index:20;overflow:auto}.modal[hidden]{display:none}.dialog{background:linear-gradient(150deg,#304537,#16271e);border:1px solid #728366;box-shadow:0 25px 100px #000a;border-radius:25px;padding:clamp(20px,4vw,35px);max-width:500px;width:100%;max-height:calc(100dvh - 40px);overflow:auto}.dialog .heroicon{font-size:45px;background:#deefae;width:77px;height:77px;border-radius:22px;display:grid;place-items:center;margin-bottom:18px}.dialog h1{font-size:clamp(32px,6vw,45px);letter-spacing:-.06em;line-height:1.05;margin:0 0 12px}.dialog h1 span{color:var(--leaf)}.dialog p{font-size:14px;line-height:1.65;color:#c8d6c0}.dialog .steps{display:grid;gap:8px;margin:18px 0}.step{border:1px solid #ffffff27;border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.5;background:#0a1c145b}.step b{color:#deefa3}.dialog .start{display:block;width:100%;font-size:15px;padding:15px}.dialog .fineprint{font-size:11px;color:#9bae9f;margin:12px 0 0}
-.helptext{display:none}.helptext.show{display:block}.control-row{display:flex;gap:7px;margin-top:12px}.control-row .btn{flex:1}
-@media(max-width:1060px){.layout{grid-template-columns:minmax(0,1fr)}.side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.sidecard:last-child{grid-column:1/-1}.stage{height:min(62dvh,600px)}}
-@media(max-width:650px){.app{padding:10px 10px max(18px,env(safe-area-inset-bottom))}.top{margin-bottom:10px}.brandmark{width:37px;height:37px;border-radius:11px}.brandtitle{font-size:25px}.brandsub{font-size:9px}.top-actions .btn{padding:9px 10px;font-size:11px}.top-actions .hide-mobile{display:none}.statusbar{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.metric{padding:8px 7px;min-height:59px;border-radius:10px}.metric small{font-size:8px;letter-spacing:.04em}.metric strong{font-size:17px}.metric.primarymetric{grid-column:1/-1;min-height:40px;flex-direction:row;align-items:center;justify-content:space-between;padding:8px 12px}.metric.primarymetric strong{font-size:13px}.stage{height:clamp(350px,53dvh,590px);min-height:350px;border-radius:15px}.terrain-title{top:8px;left:8px;padding:6px 9px}.terrain-title strong{font-size:11px}.terrain-title span{font-size:9px}.stage-actions{right:7px;top:7px;gap:4px}.quick-orders{display:flex}.iconbtn{width:34px;height:34px;font-size:18px}.context{font-size:10px;left:8px;bottom:9px;padding:7px;max-width:calc(100% - 113px)}#minimap{width:94px;height:63px;right:8px;bottom:9px}.side{grid-template-columns:1fr;gap:8px}.sidecard{padding:13px}.sidecard:last-child{grid-column:auto}.sidecard h2{font-size:20px}.sidecard p{margin-bottom:8px}.sidecard.compact-info{display:none}.tabbar{gap:5px}.tabbar .btn{font-size:11px;padding:9px 6px;min-width:70px}.tabbar .spacer{display:none}.footer{padding-bottom:12px}}
-@media(max-height:650px) and (orientation:landscape){.layout{grid-template-columns:minmax(0,1fr) 260px}.statusbar{grid-template-columns:repeat(5,1fr)}.metric.primarymetric{grid-column:auto;flex-direction:column}.stage{height:clamp(260px,63dvh,450px);min-height:260px}.side{display:flex}.top{margin-bottom:7px}.sidecard{padding:10px}.sidecard.compact-info{display:none}}
-
-.rts-strip{display:flex;align-items:center;gap:7px;margin-top:9px;padding:8px;border:1px solid #526047;border-radius:13px;background:#192921;overflow-x:auto;scrollbar-width:none}
-.rts-strip::-webkit-scrollbar{display:none}
-.selection-status{display:flex;flex-direction:column;justify-content:center;min-width:110px;margin:0 4px 0 1px}
-.selection-status strong{font-size:12px;color:#e9f2c4;white-space:nowrap}
-.selection-status span{font-size:10px;color:#bac6aa;white-space:nowrap}
-.unit-chip{border:1px solid #5d6c56;background:#2c4032;color:#f7f2dc;border-radius:10px;min-height:44px;padding:6px 11px;font-size:11px;font-weight:900;white-space:nowrap}
-.unit-chip[aria-pressed="true"]{background:#dbeaa9;color:#273820}
-.unit-chip small{display:block;margin-top:1px;opacity:.75;font-size:9px;font-weight:650}
-.unit-chip:disabled{opacity:.38}
-.selection-box{position:absolute;pointer-events:none;border:2px solid #eef5ad;background:#dbeea62b;z-index:3}
-.rts-hint{display:block;color:#c5d4b2;font-size:10px;line-height:1.4;margin:5px 0}
-.build-list{display:grid;grid-template-columns:1fr;gap:7px}
-.build-row{border:1px solid #526448;border-radius:11px;background:#263a2e;color:#f1f1d5;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;text-align:left;font-weight:800;font-size:12px}
-.build-row small{color:#c3cdae;font-size:10px;font-weight:600;display:block;margin-top:3px}
-.build-row em{font-style:normal;color:#e9d194;font-size:11px;white-space:nowrap}
-@media(max-width:650px){.rts-strip{gap:5px;padding:6px}.selection-status{min-width:89px}.selection-status strong{font-size:10px}.unit-chip{padding:5px 8px;font-size:10px;min-height:42px}}
-
-/* Keep the nest and backyard camera immersive: field orders belong on the surface. */
-.stage[data-view="nest"] .quick-orders,.stage[data-view="yard"] .quick-orders{display:none}
-.stage[data-view="nest"] #minimap,.stage[data-view="yard"] #minimap{display:none}
-.stage[data-view="nest"] #world{cursor:grab}
-.stage[data-view="nest"] #world:active{cursor:grabbing}
-.stage[data-view="nest"] .terrain-title{background:#1e2019e8;border-color:#aa9770}
+:root{color-scheme:dark;--bg:#181c17;--frame:#222a20;--raised:#2e3929;--ink:#f2eed8;--soft:#bcbda5;--line:#58654c;--gold:#edca7e;--green:#dae69e;--red:#ed8667;--radius:16px}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;overscroll-behavior:none}
+body{background:radial-gradient(ellipse at 20% 0,#43523c65,transparent 40%),linear-gradient(140deg,#1c251d,#141a15)}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible{outline:3px solid #f2eaa4;outline-offset:3px}
+[hidden]{display:none!important}
+.app{max-width:1460px;margin:auto;padding:14px 18px max(26px,env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:12px}
+.identity{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{width:46px;height:46px;flex:none;display:grid;place-items:center;background:#f0e0a2;color:#26301d;border-radius:15px;font-size:26px;box-shadow:inset 0 -5px #bda66d}
+.identity h1{font-size:28px;letter-spacing:-.065em;line-height:1.05;margin:0;font-weight:950}
+.identity h1 span{color:var(--green)}
+.identity small{font-size:9px;color:#d0caac;letter-spacing:.17em;font-weight:850;display:block;margin-top:4px}
+.top-actions{display:flex;align-items:center;gap:7px}
+.btn{padding:10px 13px;border:1px solid #59634f;border-radius:11px;background:#303d31;min-height:40px;font-size:12px;font-weight:850;white-space:nowrap}
+.btn:hover,.pill:hover,.order:hover{border-color:#f2e3af}
+.btn.primary{background:var(--green);border-color:var(--green);color:#20301c}
+.btn.warn{background:#683e32;border-color:#a56c54}
+.shell{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:12px;align-items:start}
+.game-column{min-width:0}
+.mission{background:linear-gradient(112deg,#3d4d32,#26382b);border:1px solid #899b65;border-radius:var(--radius);padding:13px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;margin-bottom:10px}
+.mission-heading{display:flex;align-items:baseline;gap:12px}
+.eyebrow{font-size:10px;letter-spacing:.14em;color:#d7e2a9;font-weight:950;text-transform:uppercase}
+.mission h2{font-size:clamp(17px,2.3vw,23px);font-weight:950;letter-spacing:-.04em;margin:2px 0 3px}
+.mission .description{font-size:11px;color:#dfdfc6;line-height:1.5;margin:3px 0 8px;max-width:680px}
+.progressline{display:flex;align-items:center;gap:12px}
+.progressbar{height:7px;border:1px solid #9baf7366;background:#162419;border-radius:20px;overflow:hidden;flex:1;max-width:380px}
+.progressbar>span{display:block;height:100%;width:0%;background:linear-gradient(90deg,#a7c87e,#ffdc89);transition:width .15s}
+.counter{font-size:10px;white-space:nowrap;color:#ffe6aa;font-weight:850}
+.pill{border:1px solid #aec080;background:#e1e6ad;color:#29331f;border-radius:10px;padding:9px 11px;font-size:11px;font-weight:900;min-height:42px}
+.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.metric{background:linear-gradient(135deg,#344131,#232f25);border:1px solid #4d5e46;border-radius:12px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:48px}
+.metric small{color:#bcc9b0;font-size:9px;font-weight:750;text-transform:uppercase;letter-spacing:.06em}
+.metric strong{font-size:18px;font-variant-numeric:tabular-nums}
+.metric strong.gold{color:#f7dc91}
+.metric strong.red{color:#f39d8b}
+.stage{position:relative;height:clamp(420px,61vh,720px);min-height:370px;overflow:hidden;border:2px solid #8a936a;border-radius:18px;background:#7b664b;touch-action:none;box-shadow:0 17px 50px #070e0880;isolation:isolate}
+#world{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.viewport-label{position:absolute;top:13px;left:13px;pointer-events:none;background:#1a291edb;border:1px solid #d0d9b15a;border-radius:12px;padding:8px 11px;backdrop-filter:blur(12px);max-width:56%}
+.viewport-label strong{display:block;color:#f4efd7;font-size:11px;letter-spacing:.08em}
+.viewport-label span{display:block;color:#c0caaa;font-size:10px;margin-top:3px}
+.zoom-rail{position:absolute;top:12px;right:12px;display:flex;gap:5px}
+.zoom-rail button{border:1px solid #f3edb055;background:#1d291fdc;color:#fff1cb;border-radius:10px;width:38px;height:38px;font-size:21px;backdrop-filter:blur(9px)}
+.stage-note{position:absolute;left:11px;bottom:11px;pointer-events:none;display:flex;gap:8px;align-items:center;background:#1a251de3;border:1px solid #e3ecc04b;border-radius:10px;padding:9px 11px;font-size:11px;color:#f3efd5;max-width:75%;backdrop-filter:blur(10px)}
+.stage-note i{background:#dfe8a2;width:7px;height:7px;flex:none;border-radius:50%}
+.event-toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:#273b2eea;border:1px solid #e4dc9a;color:#f6ebcd;border-radius:13px;padding:11px 15px;max-width:min(420px,80%);min-width:180px;box-shadow:0 10px 28px #0009;text-align:center;font-size:12px;font-weight:850;pointer-events:none;z-index:3}
+.event-toast.pop{animation:reveal .3s both}
+@keyframes reveal{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translate(-50%,0)}}
+.tab-switch{display:flex;align-items:center;gap:7px;margin-top:9px}
+.tab-switch .switch{flex:1;border:1px solid #57664e;border-radius:11px;background:#243427;padding:10px;color:#cdd1ba;font-size:12px;font-weight:850;min-height:44px}
+.tab-switch .switch[aria-pressed=true]{background:#dce5a7;color:#25311e;border-color:#e6eab1}
+.tab-switch .speed{border:1px solid #647458;background:#263329;color:#e5e4c8;border-radius:10px;min-height:44px;min-width:57px;font-size:13px;font-weight:850}
+.selection{display:flex;align-items:center;gap:6px;background:#243126;border:1px solid #55654e;border-radius:12px;margin-top:8px;padding:7px;overflow-x:auto;scrollbar-width:none}
+.selection::-webkit-scrollbar{display:none}
+.selection-status{min-width:108px;margin:0 6px 0 3px;display:flex;flex-direction:column;gap:2px}
+.selection-status strong{font-size:10px;color:#e4efb8;white-space:nowrap}
+.selection-status small{font-size:10px;color:#b3c1a8;white-space:nowrap}
+.chip{background:#344638;border:1px solid #68795f;border-radius:9px;font-size:11px;min-height:43px;padding:7px 12px;font-weight:850;white-space:nowrap}
+.chip[aria-pressed=true]{background:#dfe8b2;color:#263322;border-color:#dfe8b2}
+.command-tray{display:flex;gap:6px;align-items:center;margin-top:8px;overflow-x:auto;scrollbar-width:none}
+.command-tray::-webkit-scrollbar{display:none}
+.order{background:#283a2b;border:1px solid #596f57;border-radius:12px;min-width:105px;flex:1;min-height:56px;padding:8px 10px;text-align:left;font-size:12px;font-weight:850}
+.order small{display:block;font-size:9px;opacity:.75;margin-top:4px;font-weight:700}
+.order[aria-pressed=true]{background:#e4e4ad;color:#273524;border-color:#e4e4ad}
+.tools{margin-top:10px;background:linear-gradient(135deg,#293c2b,#202f24);border:1px solid #57694d;border-radius:15px;padding:11px}
+.tools h3{font-size:12px;margin:0 0 9px;letter-spacing:.05em;color:#e3e5bb}
+.tool-actions{display:flex;gap:7px}
+.tool-actions button{flex:1;min-height:44px;padding:10px;border:1px solid #657656;border-radius:10px;background:#364b33;font-size:12px;font-weight:850}
+.tool-actions .major{background:#dfdfa8;color:#26351f;border-color:transparent}
+.tool-actions .major:disabled{background:#536047;color:#e6e6cb;border:1px solid #839071}
+.brood-help{font-size:10px;color:#b5c9ab;margin:7px 0 0;display:flex;justify-content:space-between}
+.inspector{display:flex;flex-direction:column;gap:10px;position:sticky;top:12px}
+.card{padding:15px;border:1px solid #506049;border-radius:15px;background:linear-gradient(145deg,#2a3a2c,#1e2b22)}
+.card .eyebrow{margin:0 0 10px}
+.card h3{font-size:20px;margin:0 0 10px;letter-spacing:-.04em}
+.inspector p{font-size:12px;line-height:1.55;color:#c1c9b1;margin:0 0 9px}
+.row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e6f0b21d;padding:10px 0;font-size:12px}
+.row:last-child{border-bottom:0}
+.row label{color:#bbcaae}
+.row strong{color:#f2efda;font-variant-numeric:tabular-nums}
+.logline{border-left:2px solid #b5cb82;padding-left:10px;color:#d6dec7;font-size:12px;line-height:1.55}
+.footer{text-align:center;font-size:10px;color:#a4ae95;padding:15px 0 5px}
+.footer a{color:#d5e4a7}
+.modal{position:fixed;inset:0;background:#10180fdf;display:grid;place-items:center;z-index:15;padding:14px;overflow:auto;backdrop-filter:blur(9px)}
+.dialog{width:min(100%,510px);background:linear-gradient(155deg,#374e37,#1c2d23);border:1px solid #8a9c74;border-radius:24px;padding:clamp(18px,4vw,34px);box-shadow:0 30px 80px #000a;max-height:calc(100dvh - 35px);overflow:auto}
+.dialog .art{font-size:51px;line-height:1.2;margin-bottom:9px}
+.dialog h2{font-size:clamp(31px,5vw,42px);font-weight:950;letter-spacing:-.065em;line-height:1.02;margin:9px 0 13px}
+.dialog h2 span{color:#e9e6ae}
+.dialog p{font-size:13px;line-height:1.65;color:#d7dfca}
+.dialog .step{background:#192c20a8;border:1px solid #a3b18a38;border-radius:11px;padding:11px 13px;margin:6px 0;font-size:12px;line-height:1.55;color:#d9e4cd}
+.dialog .step strong{color:#ecedbe}
+.dialog .action{margin-top:12px;display:block;width:100%;border:none;border-radius:11px;background:#e4e9b1;color:#24351f;min-height:52px;font-size:15px;font-weight:950}
+.dialog .stat{font-size:11px;color:#efdfa9}
+.stage[data-view=nest] #world{cursor:grab}
+.stage[data-view=nest] #world:active{cursor:grabbing}
+@media(max-width:1060px){.shell{grid-template-columns:1fr}.inspector{position:static;display:grid;grid-template-columns:1fr 1fr}.inspector .card:last-child{grid-column:1/-1}}
+@media(max-width:650px){
+ .app{padding:8px 9px max(18px,env(safe-area-inset-bottom))}
+ .top{margin-bottom:8px}
+ .identity{gap:7px}.mark{width:37px;height:37px;font-size:23px;border-radius:10px}
+ .identity h1{font-size:23px}.identity small{font-size:8px;letter-spacing:.06em}
+ .top-actions{gap:4px}.top-actions .btn{min-height:36px;padding:8px 9px;font-size:10px}.top-actions #newGame{display:none}
+ .mission{padding:10px;gap:7px;grid-template-columns:1fr auto}
+ .mission .description{font-size:10px;line-height:1.35;max-height:42px;overflow:hidden}
+ .mission h2{font-size:16px}.mission-heading{display:block}
+ .mission .pill{font-size:10px;max-width:94px;padding:5px 7px}
+ .progressline{gap:6px}.counter{font-size:9px}
+ .metrics{gap:4px;margin-bottom:7px}
+ .metric{padding:5px;min-height:43px;display:flex;flex-direction:column;align-items:flex-start}
+ .metric small{font-size:8px;letter-spacing:0}.metric strong{font-size:15px}
+ .stage{height:min(57dvh,580px);min-height:320px;border-radius:14px}
+ .viewport-label{top:7px;left:7px;padding:6px 9px;max-width:58%}
+ .viewport-label strong{font-size:10px}.viewport-label span{font-size:9px}
+ .zoom-rail{top:6px;right:6px}.zoom-rail button{width:34px;height:34px;font-size:19px}
+ .stage-note{bottom:7px;left:7px;padding:7px;max-width:89%;font-size:10px}
+ .tab-switch{gap:5px;margin-top:7px}.tab-switch .switch{font-size:11px;min-height:41px;padding:7px}
+ .tab-switch .speed{min-height:41px;min-width:50px}
+ .selection{gap:5px;padding:5px;margin-top:6px}.selection-status{min-width:78px}
+ .selection-status strong{font-size:9px}.selection-status small{font-size:9px}
+ .chip{min-height:42px;padding:5px 8px;font-size:10px}
+ .command-tray{gap:5px;margin-top:6px}
+ .order{min-width:87px;min-height:49px;padding:6px 8px;font-size:10px}
+ .order small{font-size:9px}
+ .inspector{grid-template-columns:1fr;gap:7px}
+ .inspector .card:last-child{grid-column:auto}
+ .card{padding:12px}
+}
+@media(max-height:530px) and (orientation:landscape){
+ .top{margin-bottom:5px}.mission{padding:7px 11px}.mission .description{display:none}
+ .stage{height:65dvh;min-height:220px}.metrics{margin-bottom:5px}
+ .mission h2{font-size:17px}.selection{margin-top:5px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
-<script src="./nest.js" defer></script>
+<script src="./firstlight.js" defer></script>
+<script src="./engine.js" defer></script>
+<script src="./renderer.js" defer></script>
 <script src="./game.js" defer></script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
 </head>
 <body>
 <div class="app">
 <header class="top">
-<div class="brand"><div class="brandmark" aria-hidden="true">🐜</div><div><div class="brandtitle">COLONY<span>.</span></div><div class="brandsub">A LITTLE WORLD. A BIG WAR.</div></div></div>
-<div class="top-actions"><button class="btn subtle hide-mobile" type="button" id="newGame">↻ New colony</button><button class="btn subtle" type="button" id="help">? Guide</button><button class="btn primary" type="button" id="pause" aria-pressed="false">Ⅱ Pause</button></div>
+ <div class="identity"><div class="mark" aria-hidden="true">🐜</div><div><h1>COLONY<span>.</span></h1><small>FIRST LIGHT · AN ANT COLONY RTS</small></div></div>
+ <div class="top-actions"><button type="button" class="btn" id="newGame">↻ Restart</button><button type="button" class="btn" id="help">? Guide</button><button type="button" class="btn primary" id="pause" aria-pressed="false">Ⅱ Pause</button></div>
 </header>
-<div class="layout">
-<main class="gamecol">
-<div class="statusbar" aria-live="off">
-<div class="metric primarymetric"><small id="missionLabel">MISSION 01</small><strong id="missionTitle">Establish the colony</strong></div>
-<div class="metric"><small>⚫ Black ants</small><strong id="blacks">0</strong></div>
-<div class="metric"><small>🔴 Red ants</small><strong class="red" id="reds">0</strong></div>
-<div class="metric"><small>✦ Stored food</small><strong class="green" id="food">0</strong></div>
-<div class="metric"><small>🥚 Brood</small><strong id="eggs">0</strong></div>
-</div>
-<section class="stage" id="stage" aria-label="Ant colony simulation. Tap or click to send your golden scout ant to a destination.">
-<canvas id="world"></canvas><div class="terrain-title"><strong id="viewTitle">THE SURFACE</strong><span id="viewSubtitle">Select ants, then tap ground to issue a command</span></div>
-<nav class="quick-orders" aria-label="Quick colony orders"><button class="quick-order" data-quick-order="forage" type="button" aria-label="Order workers to forage" aria-pressed="true">🌿<span>Forage</span></button><button class="quick-order" data-quick-order="rally" type="button" aria-label="Rally ants near the scout" aria-pressed="false">📣<span>Rally</span></button><button class="quick-order" data-quick-order="attack" type="button" aria-label="Attack the red colony" aria-pressed="false">⚔<span>Attack</span></button><button class="quick-order" data-quick-order="defend" type="button" aria-label="Defend the black queen" aria-pressed="false">🛡<span>Defend</span></button></nav>
-<div class="stage-actions"><button class="iconbtn" id="zoomOut" aria-label="Zoom out">−</button><button class="iconbtn" id="zoomIn" aria-label="Zoom in">+</button><button class="iconbtn" id="center" aria-label="Center on your ant">⌖</button></div>
-<canvas id="minimap" width="244" height="164" aria-hidden="true"></canvas>
-<div class="context" role="status"><span class="dot"></span><span id="tip">Scout the food, then defend your queen.</span></div>
-</section>
-<div class="rts-strip" role="toolbar" aria-label="RTS unit selection">
-<div class="selection-status"><strong id="selectionCount">1 selected</strong><span id="selectionType">Golden scout</span></div>
-<button type="button" class="unit-chip" data-group="scout" aria-pressed="true">⭐ Scout</button>
-<button type="button" class="unit-chip" data-group="worker" aria-pressed="false">🌿 Workers</button>
-<button type="button" class="unit-chip" data-group="soldier" aria-pressed="false">⚔ Soldiers</button>
-<button type="button" class="unit-chip" data-group="all" aria-pressed="false">⬡ All ants</button>
-<button type="button" class="unit-chip" id="clearSelection">✕ Clear</button>
-</div>
-<div class="tabbar" role="group" aria-label="Simulation views"><button class="btn active" data-view="surface" aria-pressed="true">🌱 Surface</button><button class="btn" data-view="nest" aria-pressed="false">🪺 Nest</button><button class="btn" data-view="yard" aria-pressed="false">▦ Backyard</button><span class="spacer"></span><button class="btn subtle" id="speed">1× speed</button></div>
+<div class="shell">
+<main class="game-column">
+ <section class="mission" aria-label="Current mission objective">
+  <div>
+   <div class="mission-heading"><small class="eyebrow" id="objectiveCount">STEP 1 / 5</small><h2 id="objectiveTitle">Feed the first brood</h2></div>
+   <p class="description" id="objectiveDetail">Gather seeds to nourish the young colony.</p>
+   <div class="progressline"><div class="progressbar" role="progressbar" aria-label="Objective progress"><span id="objectiveProgress"></span></div><span class="counter" id="objectiveCounter">0 / 45 food delivered</span></div>
+  </div>
+  <button type="button" class="pill" id="objectiveFocus">Find food</button>
+ </section>
+ <div class="metrics">
+  <div class="metric"><small>✦ Food</small><strong id="food" class="gold">25</strong></div>
+  <div class="metric"><small>⚫ Workers</small><strong id="workers">4</strong></div>
+  <div class="metric"><small>⚔ Soldiers</small><strong class="red" id="soldiers">0</strong></div>
+  <div class="metric"><small>🥚 Brood</small><strong id="brood">0</strong></div>
+  <div class="metric"><small>♛ Queen</small><strong id="queenHealth">100%</strong></div>
+ </div>
+ <section class="stage" id="stage" aria-label="Playable ant-colony battlefield and nest">
+  <canvas id="world" aria-label="Select ants, command groups, and excavate your nest"></canvas>
+  <div class="viewport-label"><strong id="viewHeading">SURFACE · FIRST LIGHT</strong><span id="viewHint">Tap ants to select · tap terrain to command</span></div>
+  <div class="zoom-rail"><button type="button" id="zoomOut" aria-label="Zoom out">−</button><button type="button" id="zoomIn" aria-label="Zoom in">+</button><button type="button" id="center" aria-label="Center on objective">⌖</button></div>
+  <div class="event-toast" id="eventToast" role="status" hidden><span id="eventText"></span></div>
+  <div class="stage-note"><i></i><span id="statusHint">Your new colony is growing</span></div>
+ </section>
+ <nav class="tab-switch" aria-label="World layers">
+  <button class="switch" type="button" data-view="surface" aria-pressed="true">🌱 Surface</button>
+  <button class="switch" type="button" data-view="nest" aria-pressed="false">⬡ Underground nest</button>
+  <button type="button" class="speed" id="speed" aria-label="Simulation speed">1×</button>
+ </nav>
+ <section class="selection" aria-label="Select your colony units">
+  <div class="selection-status"><strong id="selectedCount">1 SELECTED</strong><small id="selectedSummary">Scout selected</small></div>
+  <button class="chip" type="button" data-group="scout" aria-pressed="true">✦ Scout</button>
+  <button class="chip" type="button" data-group="worker" aria-pressed="false">◉ Workers</button>
+  <button class="chip" type="button" data-group="soldier" aria-pressed="false">⚔ Soldiers</button>
+  <button class="chip" type="button" data-group="all" aria-pressed="false">⬡ All ants</button>
+ </section>
+ <section class="command-tray" aria-label="Squad commands">
+  <button class="order" type="button" data-mode="move" aria-pressed="true">⌖ Move<small>Set destination</small></button>
+  <button class="order" type="button" data-mode="forage" aria-pressed="false">✿ Forage<small>Collect seeds</small></button>
+  <button class="order" type="button" data-mode="attack" aria-pressed="false">⚔ Attack<small>Fight enemy ants</small></button>
+  <button class="order" type="button" data-mode="defend" aria-pressed="false">⛨ Defend<small>Guard a point</small></button>
+  <button class="order" type="button" data-mode="dig" aria-pressed="false" hidden>⛏ Dig<small>Excavate soil</small></button>
+ </section>
+ <section class="tools" id="nestTools" aria-label="Excavate your nest" hidden>
+  <h3>⛏ EXCAVATION & NURSERY</h3>
+  <div class="tool-actions"><button type="button" id="planDig">Mark nursery tunnel</button><button type="button" class="major" id="buildNursery">Build nursery · 45 food</button></div>
+  <div class="brood-help"><span id="buildProgress">0 / 6 CELLS DUG</span><span id="queueCount">0 marked</span><span id="nestBuildLabel">Nursery unbuilt</span></div>
+ </section>
+ <section class="tools" aria-label="Train ant units">
+  <h3>🥚 QUEEN'S BROOD</h3>
+  <div class="tool-actions">
+   <button type="button" data-train="worker" id="trainWorker">+ Worker · 18 food</button>
+   <button type="button" data-train="soldier" id="trainSoldier">+ Soldier · 30 food</button>
+  </div>
+  <div class="brood-help"><span>New ants hatch in the nursery</span><span id="selectedStatus">MOVE ORDER</span></div>
+ </section>
 </main>
-<aside class="side" aria-label="Colony control panel">
-<section class="sidecard">
-<div class="eyebrow">● FIELD ORDERS</div><h2 id="orderTitle">Lead your ants</h2><p id="orderDescription">Select scout, workers, soldiers or the whole colony. Tap the map to direct the selected group.</p>
-<div class="group" role="group" aria-label="Orders">
-<button class="command" data-order="forage" aria-pressed="true">🌿 Forage<small>Find & carry food</small></button>
-<button class="command" data-order="rally" aria-pressed="false">📣 Rally<small>Gather escorts</small></button>
-<button class="command" data-order="attack" aria-pressed="false">⚔ Attack<small>Fight the reds</small></button>
-<button class="command" data-order="defend" aria-pressed="false">🛡 Defend<small>Protect the nest</small></button>
-</div><div class="hint" id="controlHint">Select workers or soldiers, then tap a destination. Drag to pan, pinch to zoom.</div>
-</section>
-<section class="sidecard">
-<div class="eyebrow">COLONY HEALTH</div><div class="statrow"><span>Queen</span><b id="queenHealth">100%</b></div><div class="statrow"><span>Scout</span><b id="scoutHealth">100%</b></div><div class="statrow"><span>Workers / soldiers</span><b id="castes">0 / 0</b></div><div class="statrow"><span>Tiles held</span><b id="tiles">1 / 9</b></div><div class="statrow"><span>Weather</span><b id="weather">Warm & dry</b></div><div style="padding-top:12px"><div class="statrow"><span>Backyard campaign</span><b id="campaignPct">0%</b></div><div class="progress"><b id="campaignBar"></b></div></div>
-</section>
-
-<section class="sidecard" aria-label="Colony production">
-<div class="eyebrow">COLONY COMMAND</div><h2>Raise your army</h2>
-<div class="group">
-<button type="button" class="command" data-recruit="worker">+ Worker<small>22 food · 4 sec</small></button>
-<button type="button" class="command" data-recruit="soldier">+ Soldier<small>38 food · 7 sec</small></button>
-</div>
-<p class="rts-hint" id="capacityStatus">Population and brood capacity</p>
-<div class="eyebrow">EXPAND THE NEST</div>
-<div class="build-list">
-<button type="button" class="build-row" data-build="nursery"><span>🥚 Excavate nursery<small>More brood space & faster incubation</small></span><em id="nurseryCost">85 food</em></button>
-<button type="button" class="build-row" data-build="storage"><span>🌾 Expand granary<small>Increase maximum stored food</small></span><em id="storageCost">65 food</em></button>
-<button type="button" class="build-row" data-build="gate"><span>🛡 Fortify entrance<small>Protect your queen from attackers</small></span><em id="gateCost">70 food</em></button>
-</div></section>
-<section class="sidecard compact-info"><div class="eyebrow">FIELD JOURNAL</div><div id="journal" class="log" aria-live="polite"><div class="logline">A young queen has arrived.</div></div></section>
+<aside class="inspector" aria-label="Colony status">
+ <section class="card"><div class="eyebrow">COLONY ORDERS</div><h3>Your first territory</h3><p>Gather food, carve a connected nest, grow your army, defend the queen, and seize the red outpost. Everything you command happens in the same living world.</p><div class="row"><label>Scenario</label><strong>First Light</strong></div><div class="row"><label>Time played</label><strong id="elapsed">0:00</strong></div></section>
+ <section class="card"><div class="eyebrow">ACTIVE STRATEGY</div><h3>Make every ant count</h3><p>Workers deliver seeds through the entrance into your granary. Soldiers defend against the red raid. Underground soil only opens when workers actually dig it.</p><div class="row"><label>World</label><strong>Surface + nest</strong></div><div class="row"><label>Victory</label><strong>Secure red outpost</strong></div></section>
+ <section class="card"><div class="eyebrow">FIELD REPORT</div><div class="logline" id="logMessage">A queen begins her colony.</div></section>
 </aside>
 </div>
-<footer class="footer">An original browser game inspired by classic ant-colony simulators. Not affiliated with Maxis or Electronic Arts. · <a href="../">Hambone Arcade</a></footer>
+<footer class="footer">An original browser RTS. No proprietary SimAnt art or code. Progress saves on this device. · <a href="../">Hambone Arcade</a></footer>
 </div>
 <div class="modal" id="intro">
-<div class="dialog">
-<div class="heroicon">🐜</div><div class="eyebrow">A WORLD BENEATH YOUR FEET</div>
-<h1>Tiny ants.<br><span>Epic ambitions.</span></h1>
-<p>Build a thriving black-ant colony, gather food, command your golden scout, and push back the rival red ants. Your backyard is waiting.</p>
-<div class="steps"><div class="step"><b>01 — Select.</b> Tap one ant or use the Scout, Workers, Soldiers and All buttons to select a group. Drag a rectangle with the mouse to select multiple ants.</div><div class="step"><b>02 — Command.</b> Tap ground to move the selected units, a food patch to gather, or the red colony to attack. Orders set your army's stance.</div><div class="step"><b>03 — Grow and conquer.</b> Spend food on workers, soldiers and nest upgrades. Defeat the red queen to unlock the next backyard tile.</div></div>
-<button class="btn primary start" id="startGame">Start your colony ↗</button><div class="fineprint">Auto-saves on this device · Touch, mouse & keyboard · No sign-in</div>
-</div></div>
-<div class="modal" id="helpDialog" hidden><div class="dialog">
-<div class="eyebrow">FIELD MANUAL</div><h1>How to <span>play.</span></h1>
-<div class="steps">
-<div class="step"><b>RTS unit selection:</b> Tap an ant to select it or choose Scout, Workers, Soldiers or All. Tap terrain to command. On desktop, left-drag a selection rectangle, right-drag to pan or right-click to order units.</div>
-<div class="step"><b>Commands:</b> Forage directs workers to food, Rally groups ants around the scout, Attack sends troops toward enemies, and Defend secures your nest. Recruitment and chamber upgrades cost stored food.</div>
-<div class="step"><b>More ants:</b> Spend 22 food for a worker or 38 for a soldier. The queen also raises some workers automatically. Upgrade chambers to grow your colony's capacity.</div>
-<div class="step"><b>Fight:</b> Move your scout or rallied soldiers close to red ants. Destroy the red queen to claim the patch.</div>
-<div class="step"><b>Backyard:</b> After winning a tile, open Backyard and tap an adjacent frontier tile to expand.</div>
-<div class="step"><b>View controls:</b> On touch, drag to pan and pinch to zoom. On desktop, drag a selection rectangle; use right-drag or the minimap to pan. In Nest view, tap chambers for details. Keyboard: 1 workers, 2 soldiers, 3 all, Escape deselect.</div>
-</div><button class="btn primary start" id="closeHelp">Back to colony</button><div class="control-row"><button class="btn subtle" id="resetGame">Reset saved colony</button><button class="btn subtle" id="resumeFromHelp">Resume</button></div>
-</div></div>
-</body></html>
+ <div class="dialog">
+  <div class="art">🐜</div><small class="eyebrow">MISSION 01 · FIRST LIGHT</small>
+  <h2>One queen.<br><span>One chance to thrive.</span></h2>
+  <p>You're starting from the beginning: just four workers, a scout and a tiny burrow. Create a living colony before the rival red ants discover you.</p>
+  <div class="step"><strong>01 — Feed.</strong> Choose Workers and send them to nearby seeds. They carry food underground into the granary.</div>
+  <div class="step"><strong>02 — Dig.</strong> In the nest, mark soil to excavate. Workers carve tunnels and construct a nursery.</div>
+  <div class="step"><strong>03 — Defend and conquer.</strong> Train soldiers, hold the border, survive a raid and take the enemy outpost.</div>
+  <button type="button" class="action" id="startGame">Start First Light →</button>
+  <p class="stat">Five real objectives · Persistent progress · Touch and mouse controls</p>
+ </div>
+</div>
+<div class="modal" id="helpDialog" hidden>
+ <div class="dialog">
+  <small class="eyebrow">FIELD GUIDE</small><h2>Command the<br><span>whole colony.</span></h2>
+  <div class="step"><strong>Select:</strong> Tap one ant or use the scout, worker, soldier or all-ants group buttons. On desktop, Shift-drag selects a rectangle.</div>
+  <div class="step"><strong>Move and gather:</strong> Choose a command then tap a destination. Workers forage automatically when idle and carry food home through the same entrance you see underground.</div>
+  <div class="step"><strong>Build:</strong> When prompted, switch to Nest and tap soil or choose Mark nursery tunnel. Wait while actual workers excavate six cells; spend 45 food to build the nursery.</div>
+  <div class="step"><strong>Warfare:</strong> Train soldiers, hold the marked food cache, then defend the entrance when the red raid begins. Attack the outpost and keep ants on it to win.</div>
+  <div class="step"><strong>Camera:</strong> Drag to pan, pinch or scroll to zoom. +/− and the crosshair control also work. Keyboard: 1 Workers, 2 Soldiers, 3 All; N switches layer; Space pauses.</div>
+  <button type="button" class="action" id="closeHelp">Back to the colony</button>
+ </div>
+</div>
+<div class="modal" id="endDialog" hidden>
+ <div class="dialog">
+  <div class="art">🏆</div><small class="eyebrow" id="endEyebrow">TERRITORY WON</small>
+  <h2 id="endTitle">First Light secured!</h2><p id="endText">Your colony has survived its first battle.</p>
+  <div class="step" id="endStatistics">Colony statistics</div>
+  <button class="action" type="button" id="retry">Play First Light again →</button>
+ </div>
+</div>
+</body>
+</html>
