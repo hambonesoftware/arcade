@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test play/tests/*.test.mjs && node --check play/lab.js && node --check simant/game.js && node --check simant/nest.js && node --test simant/tests/*.test.mjs"
+    "test": "node --test play/tests/*.test.mjs && node --check play/lab.js && node --check simant/firstlight.js && node --check simant/engine.js && node --check simant/renderer.js && node --check simant/game.js && node --test simant/tests/*.test.mjs"
   }
 }
