@@ -144,7 +144,7 @@ function render(){if(!ctx)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect
 function updateUI(){const b=activeAnts('black'),r=activeAnts('red'),s=scout();$('blacks').textContent=b.length;$('reds').textContent=r.length;$('food').textContent=Math.floor(game.food);$('eggs').textContent=eggs.filter(e=>e.side==='black').length;$('queenHealth').textContent=Math.ceil(game.queen)+'%';$('scoutHealth').textContent=s?Math.ceil(s.health/s.maximum*100)+'%':'Rehatching';$('castes').textContent=b.filter(a=>a.caste==='worker').length+' / '+b.filter(a=>a.caste==='soldier').length;$('tiles').textContent=game.claimed.length+' / 9';$('campaignPct').textContent=Math.floor(game.claimed.length/9*100)+'%';$('campaignBar').style.width=(game.claimed.length/9*100)+'%';$('weather').textContent=Math.floor(game.elapsed/44)%4===3?'Cloudy':'Warm & dry';
 $('missionLabel').textContent='DAY '+game.days+' · TILE '+(game.tile+1);$('missionTitle').textContent=game.queen<=0?'Queen lost — restart':game.claimed.length===9?'The whole yard is yours!':game.won?'Territory won — expand':game.missions===0?'Gather 105 stored food':game.missions===1?'Raise 25 black ants':'Defeat the red queen';
 $('pause').textContent=game.paused?'▶ Resume':'Ⅱ Pause';$('pause').setAttribute('aria-pressed',String(game.paused));$('speed').textContent=game.speed+'× speed';orders.forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.order===game.order)));document.querySelectorAll('[data-quick-order]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.quickOrder===game.order)));views.forEach(el=>{const active=el.dataset.view===game.view;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});
-$('viewTitle').textContent=game.view==='surface'?'THE SURFACE':game.view==='nest'?'UNDERGROUND NEST':'BACKYARD OVERVIEW';$('viewSubtitle').textContent=game.view==='surface'?'Tap to direct your golden scout':game.view==='nest'?'Watch the queen and nursery':'Secure territory. Expand outward.';
+$('viewTitle').textContent=game.view==='surface'?'THE SURFACE':game.view==='nest'?'UNDERGROUND NEST':'BACKYARD OVERVIEW';$('viewSubtitle').textContent=game.view==='surface'?'Select ants, then tap to command':game.view==='nest'?'Tap chambers · drag to explore · pinch to zoom':'Secure territory. Expand outward.';
 $('minimap').style.display=game.view==='surface'?'block':'none';
 const group=selectedAnts(),castes=new Set(group.map(a=>a.caste));$('selectionCount').textContent=group.length+' selected';$('selectionType').textContent=!group.length?'Pick a group':castes.size===1?group[0].caste+(group.length>1?' group':''):'Mixed colony';groupButtons.forEach(button=>{const kind=button.dataset.group,match=kind==='all'?group.length===b.length&&group.length>0:group.length>0&&group.every(a=>a.caste===kind)&&group.length===b.filter(a=>a.caste===kind).length;button.setAttribute('aria-pressed',String(match));});
 $('capacityStatus').textContent=(b.length+eggs.filter(e=>e.side==='black').length)+' / '+unitCap()+' population including brood · '+Math.floor(game.food)+' / '+foodCapacity()+' food';
@@ -155,7 +155,8 @@ function order(name){game.order=name;const group=selectedAnts();if(group.length)
 function view(name){game.view=name;updateUI();}
 orders.forEach(el=>el.addEventListener('click',()=>order(el.dataset.order)));document.querySelectorAll('[data-quick-order]').forEach(el=>el.addEventListener('click',()=>order(el.dataset.quickOrder)));views.forEach(el=>el.addEventListener('click',()=>view(el.dataset.view)));groupButtons.forEach(button=>button.addEventListener('click',()=>selectGroup(button.dataset.group)));recruitButtons.forEach(button=>button.addEventListener('click',()=>recruit(button.dataset.recruit)));buildButtons.forEach(button=>button.addEventListener('click',()=>build(button.dataset.build)));$('clearSelection').addEventListener('click',clearSelection);
 $('pause').addEventListener('click',()=>{game.paused=!game.paused;updateUI();});$('speed').addEventListener('click',()=>{game.speed=game.speed===1?2:game.speed===2?3:.5===game.speed?1:.5;updateUI();});
-$('zoomIn').addEventListener('click',()=>zoom(1.27));$('zoomOut').addEventListener('click',()=>zoom(1/1.27));$('center').addEventListener('click',()=>centerOnScout(false));
+function zoomActive(factor,p={x:screenW/2,y:screenH/2}){if(game.view==='nest')window.ColonyNest?.zoom?.(factor,p.x,p.y,screenW,screenH);else if(game.view==='surface')zoom(factor,p);}
+$('zoomIn').addEventListener('click',()=>zoomActive(1.27));$('zoomOut').addEventListener('click',()=>zoomActive(1/1.27));$('center').addEventListener('click',()=>{if(game.view==='nest')window.ColonyNest?.reset?.();else centerOnScout(false);});
 $('help').addEventListener('click',()=>{$('helpDialog').hidden=false;game.paused=true;updateUI();});$('closeHelp').addEventListener('click',()=>{$('helpDialog').hidden=true;game.paused=false;updateUI();});$('resumeFromHelp').addEventListener('click',()=>{$('helpDialog').hidden=true;game.paused=false;updateUI();});
 function reset(){try{localStorage.removeItem(STORAGE);}catch(e){}game=initialGame();newTile(4,true);game.missions=0;game.elapsed=0;game.days=1;game.scoutRespawn=0;game.broodCooldown=2;$('helpDialog').hidden=true;game.paused=false;updateUI();store();}
 $('newGame').addEventListener('click',()=>{if(confirm('Start a new colony and erase your current progress?'))reset();});
@@ -179,14 +180,14 @@ canvas.addEventListener('pointermove',e=>{
   const arr=Array.from(touches.values());
   if(arr.length===2){
     const a=arr[0],b=arr[1],mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},sep=len(a.x-b.x,a.y-b.y);
-    if(lastPinch){camera.x-=(mid.x-lastPinch.mid.x)/camera.zoom;camera.y-=(mid.y-lastPinch.mid.y)/camera.zoom;zoom(sep/Math.max(1,lastPinch.sep),mid);}
-    lastPinch={mid,sep};limitCamera();
+    if(lastPinch){if(game.view==='surface'){camera.x-=(mid.x-lastPinch.mid.x)/camera.zoom;camera.y-=(mid.y-lastPinch.mid.y)/camera.zoom;zoom(sep/Math.max(1,lastPinch.sep),mid);limitCamera();}else if(game.view==='nest'){window.ColonyNest?.pan?.(mid.x-lastPinch.mid.x,mid.y-lastPinch.mid.y,screenW,screenH);window.ColonyNest?.zoom?.(sep/Math.max(1,lastPinch.sep),mid.x,mid.y,screenW,screenH);}}
+    lastPinch={mid,sep};
   }else if(arr.length===1){
     if(len(t.x-t.startX,t.y-t.startY)>11)t.moved=true;
     if(t.mouse&&t.button===0&&game.view==='surface'){
       if(t.moved)selectionRect={x:t.startX,y:t.startY,x2:t.x,y2:t.y};
     }else if(t.moved||t.button===2){
-      if(game.view==='surface'){camera.x+=(t.lastX-t.x)/camera.zoom;camera.y+=(t.lastY-t.y)/camera.zoom;limitCamera();}
+      if(game.view==='surface'){camera.x+=(t.lastX-t.x)/camera.zoom;camera.y+=(t.lastY-t.y)/camera.zoom;limitCamera();}else if(game.view==='nest'){window.ColonyNest?.pan?.(t.x-t.lastX,t.y-t.lastY,screenW,screenH);}
     }
     t.lastX=t.x;t.lastY=t.y;
   }
@@ -207,7 +208,7 @@ function endPointer(e){
 canvas.addEventListener('pointerup',endPointer);
 canvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);selectionRect=null;lastPinch=null;});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
-canvas.addEventListener('wheel',e=>{e.preventDefault();if(game.view==='surface')zoom(e.deltaY<0?1.14:.87,eventPosition(e));},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(game.view==='surface'||game.view==='nest')zoomActive(e.deltaY<0?1.14:.87,eventPosition(e));},{passive:false});
 mini.addEventListener('pointerdown',e=>{
   e.preventDefault();if(game.view!=='surface')return;
   const rect=mini.getBoundingClientRect(),x=clamp((e.clientX-rect.left)/rect.width*W,0,W),y=clamp((e.clientY-rect.top)/rect.height*H,0,H);
