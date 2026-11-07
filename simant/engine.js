@@ -109,7 +109,7 @@ function travel(a,p,dt,speed){
   }
   function surfaceEntry(a){a.layer='surface';a.x=PORTAL.x;a.y=PORTAL.y+(a.id%5-2)*5;a.task='';}
   function nestEntry(a){a.layer='nest';a.x=NEST_ENT.x;a.y=NEST_ENT.y;a.task='';}
-  function cross(a,layer,dt){
+  function cross(s,a,layer,dt){
     if(a.layer===layer)return true;
     if(a.layer==='nest'&&layer==='surface'){if(travelNest(s,a,NEST_ENT,dt,75))surfaceEntry(a);return false;}
     if(a.layer==='surface'&&layer==='nest'){if(travel(a,PORTAL,dt,75))nestEntry(a);return false;}
@@ -158,7 +158,7 @@ function travel(a,p,dt,speed){
   function workDig(s,a,dt){
     const q=s.nest.digQueue.find(q=>!!adjacentOpen(s,q.c,q.r));
     if(!q)return false;
-    if(!cross(a,'nest',dt))return true;
+    if(!cross(s,a,'nest',dt))return true;
     const site=adjacentOpen(s,q.c,q.r);
     if(!travelNest(s,a,site,dt,67))return true;
     q.progress+=dt*(a.role==='worker'?.29:.1);
@@ -172,7 +172,7 @@ function travel(a,p,dt,speed){
   }
   function workForage(s,a,dt){
     if(a.carry>0){
-      if(!cross(a,'nest',dt))return;
+      if(!cross(s,a,'nest',dt))return;
       if(travelNest(s,a,STORE,dt,65)){
         const weight=a.carry;a.carry=0;s.food=min(240,s.food+weight);
         s.mission.delivered+=weight;
@@ -181,7 +181,7 @@ function travel(a,p,dt,speed){
       }
       return;
     }
-    if(!cross(a,'surface',dt))return;
+    if(!cross(s,a,'surface',dt))return;
     let f=nearestFood(s,a);
     if(!f)return;
     if(travel(a,f,dt,64)&&f.amount>0){
@@ -265,17 +265,17 @@ function travel(a,p,dt,speed){
     }
     const goal=a.moveOrder||{...PORTAL};
     if(a.stance==='attack'&&s.mission.step>=4){
-      if(!cross(a,'surface',dt))return;
+      if(!cross(s,a,'surface',dt))return;
       travel(a,dist(goal,OUTPOST)<90?OUTPOST:goal,dt,78);a.task='attack';return;
     }
-    if(!cross(a,'surface',dt))return;
+    if(!cross(s,a,'surface',dt))return;
     travel(a,goal,dt,72);a.task='guard';
   }
   function raiderTick(s,a,dt){
-    if(a.stance==='retreat'){if(a.layer==='nest')cross(a,'surface',dt);else travel(a,OUTPOST,dt,82);return;}
+    if(a.stance==='retreat'){if(a.layer==='nest')cross(s,a,'surface',dt);else travel(a,OUTPOST,dt,82);return;}
     const enemy=s.ants.filter(e=>e.side==='black'&&e.hp>0&&e.layer===a.layer).sort((x,y)=>dist(x,a)-dist(y,a))[0];
     if(enemy&&dist(enemy,a)<80){travel(a,enemy,dt,73);return;}
-    if(!cross(a,'nest',dt))return;
+    if(!cross(s,a,'nest',dt))return;
     travelNest(s,a,QUEEN,dt,76);
     if(dist(a,QUEEN)<42&&a.attackCooldown<=0){s.queenHP=max(0,s.queenHP-5);a.attackCooldown=1;}
   }
@@ -325,7 +325,7 @@ function travel(a,p,dt,speed){
       else if(a.role==='soldier')soldierTick(s,a,dt);
       else if(a.role==='scout'){
         if(a.moveOrder){
-          if(!cross(a,'surface',dt))continue;
+          if(!cross(s,a,'surface',dt))continue;
           travel(a,a.moveOrder,dt,107);
           if(a.stance==='forage'){
             const f=s.foodNodes.find(f=>f.amount>0&&dist(a,f)<22);
