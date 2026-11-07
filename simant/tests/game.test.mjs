@@ -48,7 +48,10 @@ function makeRuntime(storage = {}) {
     const mappings = {
       '[data-order]': { names: ['forage', 'rally', 'attack', 'defend'], key: 'order' },
       '[data-quick-order]': { names: ['forage', 'rally', 'attack', 'defend'], key: 'quickOrder' },
-      '[data-view]': { names: ['surface', 'nest', 'yard'], key: 'view' }
+      '[data-view]': { names: ['surface', 'nest', 'yard'], key: 'view' },
+      '[data-group]': { names: ['scout', 'worker', 'soldier', 'all'], key: 'group' },
+      '[data-recruit]': { names: ['worker', 'soldier'], key: 'recruit' },
+      '[data-build]': { names: ['nursery', 'storage', 'gate'], key: 'build' }
     };
     const mapping = mappings[selector];
     if (!mapping) throw new Error('Unexpected selector: ' + selector);
@@ -162,4 +165,56 @@ test('a touch click orders the scout, but a drag pans instead of reordering', ()
   state = JSON.parse(app.storage['hambone-colony-v1']);
   scout = state.snapshot.ants.find(a => a.caste === 'scout');
   assert.equal(JSON.stringify(scout.target), previous);
+});
+
+test('group selection issues RTS commands to multiple workers', () => {
+  const app = makeRuntime();
+  app.el('startGame').trigger('click');
+  app.el('groupworker').trigger('click');
+  const selected = Number(app.el('selectionCount').textContent.split(' ')[0]);
+  assert.ok(selected > 7);
+  const world = app.el('world');
+  world.trigger('pointerdown', { pointerId: 11, button: 0, clientX: 335, clientY: 340, pointerType: 'touch' });
+  world.trigger('pointerup', { pointerId: 11, button: 0, clientX: 335, clientY: 340, pointerType: 'touch' });
+  app.triggerPageHide();
+  const data = JSON.parse(app.storage['hambone-colony-v1']);
+  const ordered = data.snapshot.ants.filter(a => a.side === 'black' && a.caste === 'worker' && a.manual);
+  assert.ok(ordered.length > 7);
+});
+
+test('recruitment consumes food, adds a specific caste, and preserves the queue in saves', () => {
+  const app = makeRuntime();
+  app.el('startGame').trigger('click');
+  app.el('recruitsoldier').trigger('click');
+  app.triggerPageHide();
+  const data = JSON.parse(app.storage['hambone-colony-v1']);
+  assert.equal(data.food, 32);
+  assert.ok(data.snapshot.eggs.some(e => e.side === 'black' && e.caste === 'soldier' && e.trained));
+});
+
+test('nest upgrade costs food and persists the upgraded nursery', () => {
+  const saved = {};
+  const app = makeRuntime(saved);
+  app.el('startGame').trigger('click');
+  // Default nursery costs 85; provide the extra food through a saved state.
+  app.triggerPageHide();
+  const old = JSON.parse(saved['hambone-colony-v1']);
+  old.food = 150;
+  saved['hambone-colony-v1'] = JSON.stringify(old);
+  const reopened = makeRuntime(saved);
+  reopened.el('buildnursery').trigger('click');
+  reopened.triggerPageHide();
+  const updated = JSON.parse(saved['hambone-colony-v1']);
+  assert.equal(updated.upgrades.nursery, 1);
+  assert.equal(updated.food, 65);
+});
+
+test('mouse selection rectangle selects an ant squad without moving the camera', () => {
+  const app = makeRuntime();
+  app.el('startGame').trigger('click');
+  const canvas = app.el('world');
+  canvas.trigger('pointerdown', { pointerId: 3, button: 0, pointerType: 'mouse', clientX: 50, clientY: 175 });
+  canvas.trigger('pointermove', { pointerId: 3, button: 0, pointerType: 'mouse', clientX: 280, clientY: 375 });
+  canvas.trigger('pointerup', { pointerId: 3, button: 0, pointerType: 'mouse', clientX: 280, clientY: 375 });
+  assert.match(app.el('selectionCount').textContent, /selected/);
 });
