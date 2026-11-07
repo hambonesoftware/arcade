@@ -35,7 +35,25 @@ button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto
 @media(max-width:1060px){.layout{grid-template-columns:minmax(0,1fr)}.side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.sidecard:last-child{grid-column:1/-1}.stage{height:min(62dvh,600px)}}
 @media(max-width:650px){.app{padding:10px 10px max(18px,env(safe-area-inset-bottom))}.top{margin-bottom:10px}.brandmark{width:37px;height:37px;border-radius:11px}.brandtitle{font-size:25px}.brandsub{font-size:9px}.top-actions .btn{padding:9px 10px;font-size:11px}.top-actions .hide-mobile{display:none}.statusbar{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.metric{padding:8px 7px;min-height:59px;border-radius:10px}.metric small{font-size:8px;letter-spacing:.04em}.metric strong{font-size:17px}.metric.primarymetric{grid-column:1/-1;min-height:40px;flex-direction:row;align-items:center;justify-content:space-between;padding:8px 12px}.metric.primarymetric strong{font-size:13px}.stage{height:clamp(350px,53dvh,590px);min-height:350px;border-radius:15px}.terrain-title{top:8px;left:8px;padding:6px 9px}.terrain-title strong{font-size:11px}.terrain-title span{font-size:9px}.stage-actions{right:7px;top:7px;gap:4px}.quick-orders{display:flex}.iconbtn{width:34px;height:34px;font-size:18px}.context{font-size:10px;left:8px;bottom:9px;padding:7px;max-width:calc(100% - 113px)}#minimap{width:94px;height:63px;right:8px;bottom:9px}.side{grid-template-columns:1fr;gap:8px}.sidecard{padding:13px}.sidecard:last-child{grid-column:auto}.sidecard h2{font-size:20px}.sidecard p{margin-bottom:8px}.sidecard.compact-info{display:none}.tabbar{gap:5px}.tabbar .btn{font-size:11px;padding:9px 6px;min-width:70px}.tabbar .spacer{display:none}.footer{padding-bottom:12px}}
 @media(max-height:650px) and (orientation:landscape){.layout{grid-template-columns:minmax(0,1fr) 260px}.statusbar{grid-template-columns:repeat(5,1fr)}.metric.primarymetric{grid-column:auto;flex-direction:column}.stage{height:clamp(260px,63dvh,450px);min-height:260px}.side{display:flex}.top{margin-bottom:7px}.sidecard{padding:10px}.sidecard.compact-info{display:none}}
+
+.rts-strip{display:flex;align-items:center;gap:7px;margin-top:9px;padding:8px;border:1px solid #526047;border-radius:13px;background:#192921;overflow-x:auto;scrollbar-width:none}
+.rts-strip::-webkit-scrollbar{display:none}
+.selection-status{display:flex;flex-direction:column;justify-content:center;min-width:110px;margin:0 4px 0 1px}
+.selection-status strong{font-size:12px;color:#e9f2c4;white-space:nowrap}
+.selection-status span{font-size:10px;color:#bac6aa;white-space:nowrap}
+.unit-chip{border:1px solid #5d6c56;background:#2c4032;color:#f7f2dc;border-radius:10px;min-height:44px;padding:6px 11px;font-size:11px;font-weight:900;white-space:nowrap}
+.unit-chip[aria-pressed="true"]{background:#dbeaa9;color:#273820}
+.unit-chip small{display:block;margin-top:1px;opacity:.75;font-size:9px;font-weight:650}
+.unit-chip:disabled{opacity:.38}
+.selection-box{position:absolute;pointer-events:none;border:2px solid #eef5ad;background:#dbeea62b;z-index:3}
+.rts-hint{display:block;color:#c5d4b2;font-size:10px;line-height:1.4;margin:5px 0}
+.build-list{display:grid;grid-template-columns:1fr;gap:7px}
+.build-row{border:1px solid #526448;border-radius:11px;background:#263a2e;color:#f1f1d5;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;text-align:left;font-weight:800;font-size:12px}
+.build-row small{color:#c3cdae;font-size:10px;font-weight:600;display:block;margin-top:3px}
+.build-row em{font-style:normal;color:#e9d194;font-size:11px;white-space:nowrap}
+@media(max-width:650px){.rts-strip{gap:5px;padding:6px}.selection-status{min-width:89px}.selection-status strong{font-size:10px}.unit-chip{padding:5px 8px;font-size:10px;min-height:42px}}
 </style>
+<script src="./nest.js" defer></script>
 <script src="./game.js" defer></script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}</script>
 </head>
@@ -61,6 +79,14 @@ button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto
 <canvas id="minimap" width="244" height="164" aria-hidden="true"></canvas>
 <div class="context" role="status"><span class="dot"></span><span id="tip">Scout the food, then defend your queen.</span></div>
 </section>
+<div class="rts-strip" role="toolbar" aria-label="RTS unit selection">
+<div class="selection-status"><strong id="selectionCount">1 selected</strong><span id="selectionType">Golden scout</span></div>
+<button type="button" class="unit-chip" data-group="scout" aria-pressed="true">⭐ Scout</button>
+<button type="button" class="unit-chip" data-group="worker" aria-pressed="false">🌿 Workers</button>
+<button type="button" class="unit-chip" data-group="soldier" aria-pressed="false">⚔ Soldiers</button>
+<button type="button" class="unit-chip" data-group="all" aria-pressed="false">⬡ All ants</button>
+<button type="button" class="unit-chip" id="clearSelection">✕ Clear</button>
+</div>
 <div class="tabbar" role="group" aria-label="Simulation views"><button class="btn active" data-view="surface" aria-pressed="true">🌱 Surface</button><button class="btn" data-view="nest" aria-pressed="false">🪺 Nest</button><button class="btn" data-view="yard" aria-pressed="false">▦ Backyard</button><span class="spacer"></span><button class="btn subtle" id="speed">1× speed</button></div>
 </main>
 <aside class="side" aria-label="Colony control panel">
