@@ -73,7 +73,7 @@ button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto
 <div class="metric"><small>🥚 Brood</small><strong id="eggs">0</strong></div>
 </div>
 <section class="stage" id="stage" aria-label="Ant colony simulation. Tap or click to send your golden scout ant to a destination.">
-<canvas id="world"></canvas><div class="terrain-title"><strong id="viewTitle">THE SURFACE</strong><span id="viewSubtitle">Tap ground to direct your golden scout</span></div>
+<canvas id="world"></canvas><div class="terrain-title"><strong id="viewTitle">THE SURFACE</strong><span id="viewSubtitle">Select ants, then tap ground to issue a command</span></div>
 <nav class="quick-orders" aria-label="Quick colony orders"><button class="quick-order" data-quick-order="forage" type="button" aria-label="Order workers to forage" aria-pressed="true">🌿<span>Forage</span></button><button class="quick-order" data-quick-order="rally" type="button" aria-label="Rally ants near the scout" aria-pressed="false">📣<span>Rally</span></button><button class="quick-order" data-quick-order="attack" type="button" aria-label="Attack the red colony" aria-pressed="false">⚔<span>Attack</span></button><button class="quick-order" data-quick-order="defend" type="button" aria-label="Defend the black queen" aria-pressed="false">🛡<span>Defend</span></button></nav>
 <div class="stage-actions"><button class="iconbtn" id="zoomOut" aria-label="Zoom out">−</button><button class="iconbtn" id="zoomIn" aria-label="Zoom in">+</button><button class="iconbtn" id="center" aria-label="Center on your ant">⌖</button></div>
 <canvas id="minimap" width="244" height="164" aria-hidden="true"></canvas>
@@ -91,17 +91,31 @@ button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto
 </main>
 <aside class="side" aria-label="Colony control panel">
 <section class="sidecard">
-<div class="eyebrow">● FIELD ORDERS</div><h2 id="orderTitle">Lead your ants</h2><p id="orderDescription">Your golden scout leads the black colony. Pick an order, then tap the field to move.</p>
+<div class="eyebrow">● FIELD ORDERS</div><h2 id="orderTitle">Lead your ants</h2><p id="orderDescription">Select scout, workers, soldiers or the whole colony. Tap the map to direct the selected group.</p>
 <div class="group" role="group" aria-label="Orders">
 <button class="command" data-order="forage" aria-pressed="true">🌿 Forage<small>Find & carry food</small></button>
 <button class="command" data-order="rally" aria-pressed="false">📣 Rally<small>Gather escorts</small></button>
 <button class="command" data-order="attack" aria-pressed="false">⚔ Attack<small>Fight the reds</small></button>
 <button class="command" data-order="defend" aria-pressed="false">🛡 Defend<small>Protect the nest</small></button>
-</div><div class="hint" id="controlHint">Tap food to gather it. Two fingers pan and pinch to zoom.</div>
+</div><div class="hint" id="controlHint">Select workers or soldiers, then tap a destination. Drag to pan, pinch to zoom.</div>
 </section>
 <section class="sidecard">
 <div class="eyebrow">COLONY HEALTH</div><div class="statrow"><span>Queen</span><b id="queenHealth">100%</b></div><div class="statrow"><span>Scout</span><b id="scoutHealth">100%</b></div><div class="statrow"><span>Workers / soldiers</span><b id="castes">0 / 0</b></div><div class="statrow"><span>Tiles held</span><b id="tiles">1 / 9</b></div><div class="statrow"><span>Weather</span><b id="weather">Warm & dry</b></div><div style="padding-top:12px"><div class="statrow"><span>Backyard campaign</span><b id="campaignPct">0%</b></div><div class="progress"><b id="campaignBar"></b></div></div>
 </section>
+
+<section class="sidecard" aria-label="Colony production">
+<div class="eyebrow">COLONY COMMAND</div><h2>Raise your army</h2>
+<div class="group">
+<button type="button" class="command" data-recruit="worker">+ Worker<small>22 food · 4 sec</small></button>
+<button type="button" class="command" data-recruit="soldier">+ Soldier<small>38 food · 7 sec</small></button>
+</div>
+<p class="rts-hint" id="capacityStatus">Population and brood capacity</p>
+<div class="eyebrow">EXPAND THE NEST</div>
+<div class="build-list">
+<button type="button" class="build-row" data-build="nursery"><span>🥚 Excavate nursery<small>More brood space & faster incubation</small></span><em id="nurseryCost">85 food</em></button>
+<button type="button" class="build-row" data-build="storage"><span>🌾 Expand granary<small>Increase maximum stored food</small></span><em id="storageCost">65 food</em></button>
+<button type="button" class="build-row" data-build="gate"><span>🛡 Fortify entrance<small>Protect your queen from attackers</small></span><em id="gateCost">70 food</em></button>
+</div></section>
 <section class="sidecard compact-info"><div class="eyebrow">FIELD JOURNAL</div><div id="journal" class="log" aria-live="polite"><div class="logline">A young queen has arrived.</div></div></section>
 </aside>
 </div>
