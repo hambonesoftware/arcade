@@ -6,38 +6,27 @@ An original mobile-first, browser-playable ant-colony strategy game, inspired by
 
 **Source:** https://github.com/hambonesoftware/arcade/tree/main/simant
 
-## Features
+## What's new — RTS and living nest
 
-- Live black and red ant colonies with workers, soldiers, a queen, eggs, food collection and reproduction.
-- RTS unit selection: tap any black ant, pick Scout/Workers/Soldiers/All groups, or drag a desktop marquee to select squads. Tap the field to issue formations and targeted commands.
-- Select stances: **Forage**, **Rally**, **Attack**, or **Defend**. Controlled ants obey manual move, gather, attack and defensive orders while the remainder of the colony continues autonomous behavior.
-- Watch free-roaming predators, pheromone scent trails and food stores in the surface simulation.
-- Three views: interactive RTS surface, detailed living nest cross-section and a **3×3 backyard conquest map**.
-- In the nest, workers and soldiers move through curved tunnels between the royal chamber, food store, egg nursery, soldier gallery, larvae/pupae room and waste chamber. The queen, eggs, stored food and guard ants are illustrated with original canvas artwork.
-- Spend food to explicitly train workers (22) or soldiers (38), and invest in a larger nursery, expanded granary or fortified nest entrance.
-- Conquer a patch by defeating the red queen, then select a neighboring frontier territory on the Backyard map.
-- Responsive on iPhone, iPad and desktop; compact in-world mobile orders, tap-to-command, one-finger drag to pan, pinch to zoom, mouse marquee selection, mouse wheel, +/− zoom, minimap navigation and keyboard group shortcuts.
-- Auto-saved **individual ant positions, health, targets, food patches, brood, predators, and colony campaign** in localStorage, plus optional offline install via service worker.
-- Entirely self-contained HTML, JavaScript, CSS and original SVG artwork. No backend and no dependencies.
+- **Select and command:** Tap individual black ants, select the scout, all workers, all soldiers, or all ants with the unit toolbar. Desktop players can marquee-select; Shift adds units to the current selection.
+- **Squad orders:** Tap the surface to move, a food patch to gather, or a red army/nest to attack. The command banner, selection rings, health bars and destination flags make orders visible. Red ants still use autonomous AI.
+- **Economy:** Recruit workers (22 food) and soldiers (38 food), with explicit incubation queues plus limited automatic worker production. Colony population and food storage are capped.
+- **Nest upgrades:** Excavate the nursery (increased population capacity and faster worker incubation), enlarge the granary (increased food capacity) or fortify the nest entrance (reduced queen damage); each can be upgraded three times.
+- **Detailed underground nest:** A new illustrated cross-section draws an entrance mound, layered soil, stones, roots, interconnected tunnels, royal chamber with queen and attendants, granary, nursery, larvae chamber, soldier gallery and refuse chamber. Moving ant traffic is derived from the living colony population.
+- **Nest inspection:** Tap chambers for their name; pinch or use +/− to zoom, drag to pan, and use the center control to reset the view.
+- **Campaign:** Fight the red queen across nine backyard patches. Pheromone trails, predators, brood and free-running workers continue to behave autonomously.
+- **Save and installation:** Store actual ants, orders, brood, resources, upgrades, and campaign in localStorage. Install as a PWA, with the nest renderer cached for offline use.
 
-## How to play
+## Controls
 
-1. Tap **Start your colony**, choose **Workers** on the RTS strip, and tap a green food pile to order the workers to harvest it.
-2. Spend food to train additional workers or soldiers. New ants hatch from the queen's brood queue.
-3. Choose **Nest** to inspect your living underground network and spend food on nursery, storage and defense upgrades. Tap any chamber for its name.
-4. Select **Soldiers** on the RTS strip, choose **Attack**, and tap the red nest or enemy units. You can also select one ant by tapping it, box-select on desktop, or choose **All**.
-5. When the red queen is defeated, select **Backyard** and tap a neighboring frontier tile. Conquer all nine patches to win.
-
-**Touch:** tap an ant to select it; tap another location to issue an order. Drag a finger to pan; pinch to zoom. The RTS strip scrolls horizontally on narrow phones.
-
-**Desktop:** left-click to select an ant and left-drag a box to select several. Right-click gives an order; right-drag pans. Click the minimap to reposition the camera. 1 selects workers, 2 soldiers, 3 the whole colony, and Escape clears selection.
-
-Use **Guide** for control instructions and a Reset action. Use **Pause** to suspend the simulation. Speed cycles through 1×, 2×, 3×, and 0.5×.
+- **Mobile:** Use the selection toolbar under the world canvas. Tap an ant to select it; tap empty ground to order your selection. Pan the surface or nest by dragging, and pinch to zoom. The four field-order buttons sit on the surface but disappear in nest view so you can see the chambers.
+- **Desktop:** Click an ant to select; left-drag a rectangle to select a squad; Shift-click or Shift-drag to extend selection. Right-click gives the current selection an order; right-drag pans. Mouse wheel zooms. Select groups with **1** (workers), **2** (soldiers), **3** (everyone); **Escape** clears selection.
+- **Nest:** Select Nest, zoom in, and tap a named chamber. The scene is an animated sectional view of the colony, not an independently simulated second set of ants.
+- **Backyard:** After a patch is secured, click/tap an adjacent frontier tile to continue the campaign.
 
 ## Tests
 
-From the Arcade repository root, run `npm test`. The checks cover game and nest-renderer JavaScript syntax, the Colony first-launch, RTS unit orders, population training, upgrade persistence, touch-versus-mouse selection, detailed chamber hit-testing and portrait/landscape rendering, snapshot restoration and tap-versus-drag behavior (alongside the shared Arcade HUD tests).
-
+From the Arcade repository root, run `npm test`. The checks cover the shared HUD library as well as Colony startup, selection, RTS orders, troop recruitment, costed upgrades, saved-game restoration, touch gestures, chamber picking and rendering.
 
 ## Publishing
 
