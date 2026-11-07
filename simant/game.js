@@ -1,228 +1,272 @@
 'use strict';
-/* COLONY — original ant-colony sandbox for Hambone Arcade.
-   No external assets, libraries, accounts, trackers, or network requests. */
+/* First Light game entrypoint. All simulation belongs to engine.js. */
 (() => {
-const W=1100,H=730,TAU=Math.PI*2,STORAGE='hambone-colony-v1',BLACK='#1d2221',RED='#ad493c';
-const $=id=>document.getElementById(id),canvas=$('world'),ctx=canvas.getContext('2d',{alpha:false}),mini=$('minimap'),mc=mini.getContext('2d');
-const stage=$('stage'),orders=Array.from(document.querySelectorAll('[data-order]')),views=Array.from(document.querySelectorAll('[data-view]'));
-const groupButtons=Array.from(document.querySelectorAll('[data-group]')),recruitButtons=Array.from(document.querySelectorAll('[data-recruit]')),buildButtons=Array.from(document.querySelectorAll('[data-build]'));
-let selectedIds=new Set(),selectionRect=null;
-const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),len=(x,y)=>Math.hypot(x,y),distance=(a,b)=>len(a.x-b.x,a.y-b.y);
-const NEST={black:{x:200,y:367},red:{x:905,y:357}};
-let scale=1,dpr=1,screenW=800,screenH=520,background=null,saved=null,booted=false;
-let camera={x:W/2,y:H/2,zoom:1},game,ants=[],foods=[],rocks=[],plants=[],trails=[],particles=[],spiders=[],eggs=[],touches=new Map(),lastTime=0,uiTimer=0,saveTimer=0,logCount=0,phase=0,weatherClock=0;
-const initialGame=()=>({order:'forage',view:'surface',paused:false,speed:1,food:70,redFood:70,queen:100,redQueen:100,tile:4,claimed:[4],won:false,days:1,elapsed:0,missions:0,upgrades:{nursery:0,storage:0,gate:0},seed:Math.floor(Math.random()*1000000)});
-function load(){try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');if(!raw||!Array.isArray(raw.claimed)||!Number.isInteger(raw.tile)||raw.tile<0||raw.tile>8)return null;return {...initialGame(),...raw,upgrades:{nursery:0,storage:0,gate:0,...(raw.upgrades||{})},view:'surface',paused:false,speed:1,order:'forage'};}catch(e){return null;}}
-function store(){if(!booted)return;try{const snapshot={ants:ants.filter(a=>a.health>0).slice(0,190),foods:foods.slice(0,75),eggs:eggs.slice(0,100),spiders:spiders.slice(0,10),trails:trails.slice(-350)};const data={...game,selected:Array.from(selectedIds),view:'surface',paused:false,order:'forage',speed:1,snapshot};localStorage.setItem(STORAGE,JSON.stringify(data));}catch(e){}}
-function log(msg){const box=$('journal');const div=document.createElement('div');div.className='logline';div.textContent=msg;box.prepend(div);while(box.children.length>4)box.lastElementChild.remove();logCount++;$('tip').textContent=msg;}
-function seedRng(seed){let n=seed>>>0;return()=>{n=(1664525*n+1013904223)>>>0;return n/4294967296;};}
-function makeBackground(){const c=document.createElement('canvas');c.width=W;c.height=H;const b=c.getContext('2d');const rng=seedRng(game.seed+game.tile*1739+42);b.fillStyle='#a9845b';b.fillRect(0,0,W,H);
-for(let i=0;i<20000;i++){const x=rng()*W,y=rng()*H,r=rng()*1.5+.3;b.fillStyle=i%5===0?'#e8bd8090':i%4===0?'#6952355e':'#634d3250';b.fillRect(x,y,r,r);}
-for(let i=0;i<72;i++){const x=rng()*W,y=rng()*H,r=rng()*36+12;const g=b.createRadialGradient(x,y,1,x,y,r);g.addColorStop(0,'#6d945246');g.addColorStop(1,'#71904c00');b.fillStyle=g;b.fillRect(x-r,y-r,r*2,r*2);}
-for(let i=0;i<45;i++){const x=rng()*W,y=rng()*H;b.strokeStyle='#5d674385';b.lineWidth=1.4;for(let j=0;j<4;j++){b.beginPath();b.moveTo(x,y);b.quadraticCurveTo(x+rng()*12-6,y-rng()*9,x+rng()*18-9,y-rng()*22);b.stroke();}}
-background=c;}
-function makeObjects(){const rng=seedRng(game.seed+game.tile*2873+31);rocks=[];plants=[];foods=[];spiders=[];trails=[];particles=[];
-for(let i=0;i<66;i++){let x=24+rng()*(W-48),y=24+rng()*(H-48);if(len(x-NEST.black.x,y-NEST.black.y)<70||len(x-NEST.red.x,y-NEST.red.y)<70)continue;rocks.push({x,y,r:4+rng()*16,shade:rng()});}
-for(let i=0;i<120;i++)plants.push({x:10+rng()*(W-20),y:10+rng()*(H-20),s:4+rng()*13,angle:rng()*TAU});
-for(let i=0;i<25;i++){let x=80+rng()*(W-160),y=60+rng()*(H-120);if(len(x-NEST.black.x,y-NEST.black.y)<90||len(x-NEST.red.x,y-NEST.red.y)<90)continue;foods.push({x,y,amount:7+Math.floor(rng()*15),max:23,r:10+rng()*10});}
-spiders.push({x:W*.54,y:130,health:100,angle:0,attack:0,steps:0});
-makeBackground();}
-let antId=0;
-function addAnt(side,caste='worker',x=null,y=null){const n=NEST[side],a={id:++antId,side,caste,x:x??n.x+rand(-35,35),y:y??n.y+rand(-35,35),angle:rand(0,TAU),speed:rand(35,52),health:caste==='soldier'?85:caste==='scout'?120:45,maximum:caste==='soldier'?85:caste==='scout'?120:45,carry:false,target:null,wander:rand(0,TAU),think:rand(.1,2),attack:0,scent:0,age:0};ants.push(a);return a;}
-function activeAnts(side){return ants.filter(a=>a.side===side&&a.health>0);}
-function selectedAnts(){return ants.filter(a=>a.side==='black'&&a.health>0&&selectedIds.has(a.id));}
-function foodCapacity(){return 250+(game.upgrades?.storage||0)*150;}
-function unitCap(){return 65+(game.upgrades?.nursery||0)*12;}
-function selectGroup(kind){const candidates=activeAnts('black').filter(a=>kind==='all'||a.caste===kind);selectedIds=new Set(candidates.map(a=>a.id));selectionRect=null;updateUI();log(candidates.length+' '+(kind==='all'?'ants':kind+'s')+' selected. Tap the field to give an order.');}
-function clearSelection(){selectedIds.clear();selectionRect=null;updateUI();}
-function selectAt(p,append=false){let best=null,closest=32/camera.zoom;for(const a of activeAnts('black')){const d=distance(a,p);if(d<closest){best=a;closest=d;}}if(!best)return false;if(!append)selectedIds.clear();if(append&&selectedIds.has(best.id))selectedIds.delete(best.id);else selectedIds.add(best.id);updateUI();return true;}
-function selectBox(box,append=false){if(!append)selectedIds.clear();for(const a of activeAnts('black')){const x=sx(a.x),y=sy(a.y);if(x>=Math.min(box.x,box.x2)&&x<=Math.max(box.x,box.x2)&&y>=Math.min(box.y,box.y2)&&y<=Math.max(box.y,box.y2))selectedIds.add(a.id);}selectionRect=null;updateUI();}
-function issueCommand(point){let troop=selectedAnts();if(!troop.length){const s=scout();if(!s)return;troop=[s];selectedIds=new Set([s.id]);}
-const red=ants.filter(a=>a.side==='red'&&a.health>0).some(a=>distance(a,point)<35);const food=foods.find(f=>f.amount>0&&distance(f,point)<f.r+15);
-const defend=game.order==='defend',attack=game.order==='attack'||red||distance(point,NEST.red)<50,gather=!!food&&!attack;
-const type=defend?'defend':attack?'attack':gather?'gather':'move';const target=gather?food:point;
-troop.forEach((a,i)=>{const columns=Math.ceil(Math.sqrt(troop.length)),column=i%columns,row=Math.floor(i/columns),offsetX=(column-(columns-1)/2)*(gather?5:24),offsetY=(row-(Math.ceil(troop.length/columns)-1)/2)*(gather?5:24);a.manual={type,x:clamp(target.x+offsetX,14,W-14),y:clamp(target.y+offsetY,14,H-14)};a.target={x:a.manual.x,y:a.manual.y};a.think=0;});
-log(troop.length+' ants ordered to '+(type==='gather'?'harvest':type==='attack'?'attack':type==='defend'?'defend':'move')+'.');updateUI();}
-function recruit(caste){const cost=caste==='soldier'?38:22;if(game.queen<=0||game.won)return;if(game.food<cost){log('Not enough food — needs '+cost+'.');return;}const total=activeAnts('black').length+eggs.filter(e=>e.side==='black').length;if(total>=unitCap()){log('Colony at capacity. Expand the nursery.');return;}game.food-=cost;eggs.push({side:'black',time:(caste==='soldier'?7:4)/(1+(game.upgrades.nursery||0)*.2),caste,trained:true});log('Queen is raising a new '+caste+'.');updateUI();store();}
-function upgradeCost(kind){const base={nursery:85,storage:65,gate:70};return base[kind]+(game.upgrades[kind]||0)*60;}
-function build(kind){if(!Object.hasOwn(game.upgrades,kind)||game.upgrades[kind]>=3)return;const cost=upgradeCost(kind);if(game.food<cost){log('Not enough food for '+kind+' expansion ('+cost+').');return;}game.food-=cost;game.upgrades[kind]++;log(kind==='nursery'?'Nursery excavated: more brood space.':kind==='storage'?'Granary enlarged: more food capacity.':'Entrance fortified: queen takes less damage.');updateUI();store();}
-function spawnPopulation(){ants=[];eggs=[];selectedIds.clear();const count=clamp(13+game.claimed.length*3,14,42);for(let i=0;i<count;i++)addAnt('black',i%5===0?'soldier':'worker');for(let i=0;i<clamp(16+game.claimed.length*4,16,45);i++)addAnt('red',i%4===0?'soldier':'worker');const s=addAnt('black','scout',245,390);selectedIds.add(s.id);}
-function newTile(index,existing=false){game.tile=index;game.redQueen=100;game.queen=clamp(game.queen,55,100);game.food=existing?game.food:Math.max(game.food,75);game.redFood=60+game.claimed.length*5;game.won=false;game.tileElapsed=0;game.days++;makeObjects();spawnPopulation();centerOnScout(true);log(existing?'Scout reporting to the nest.':'New territory! The red colony is entrenched.');store();}
-function scout(){return ants.find(a=>a.caste==='scout'&&a.side==='black'&&a.health>0);}
-function nearestFood(a){let best=null,score=Infinity;for(const f of foods){if(f.amount<=0)continue;const d=distance(a,f)+(a.side==='black'?Math.max(0,f.x-700)*.18:Math.max(0,400-f.x)*.18);if(d<score){best=f;score=d;}}return best;}
-function targetFor(a){const n=NEST[a.side],enemy=NEST[a.side==='black'?'red':'black'];if(a.manual)return a.target;if(a.caste==='scout')return a.target;
-if(a.carry)return n;
-if(a.caste==='worker'){
- if(a.side==='black'&&game.order==='rally'&&scout()&&distance(a,scout())<205)return {x:scout().x+rand(-27,27),y:scout().y+rand(-27,27)};
- let scent=null,scentScore=-Infinity;for(const t of trails){if(t.side!==a.side||!Number.isFinite(t.foodX)||!Number.isFinite(t.foodY)||t.life<1)continue;const d=distance(a,t);if(d>115)continue;const remaining=foods.some(f=>f.amount>0&&len(f.x-t.foodX,f.y-t.foodY)<24);if(!remaining)continue;const score=t.life*2.3-d*.13;if(score>scentScore){scent=t;scentScore=score;}}if(scent&&Math.random()<.68)return {x:scent.foodX+rand(-9,9),y:scent.foodY+rand(-9,9)};const f=nearestFood(a);return f?{x:f.x,y:f.y,ref:f}:n;}
- if(a.side==='red'){const nudge=game.tileElapsed>95?enemy:{x:650,y:360};return {x:nudge.x+rand(-160,160),y:nudge.y+rand(-155,155)};}
- if(game.order==='attack')return {x:enemy.x+rand(-50,50),y:enemy.y+rand(-50,50)};
- if(game.order==='rally'&&scout())return {x:scout().x+rand(-55,55),y:scout().y+rand(-55,55)};
- if(game.order==='defend')return {x:n.x+rand(-120,120),y:n.y+rand(-110,110)};
- return {x:n.x+rand(-250,250),y:n.y+rand(-200,200)};
-}
-function moveTo(a,p,dt){if(!p)return;const dx=p.x-a.x,dy=p.y-a.y,d=len(dx,dy);if(d<1)return;const dir=Math.atan2(dy,dx),turn=((dir-a.angle+Math.PI*3)%TAU)-Math.PI;a.angle+=clamp(turn,-dt*8,dt*8);let speed=a.caste==='scout'?118:a.caste==='soldier'?78:a.speed;if(a.carry)speed*=.78;const step=Math.min(d,speed*dt);a.x=clamp(a.x+dx/d*step,14,W-14);a.y=clamp(a.y+dy/d*step,14,H-14);}
-function emit(x,y,color,n=5){for(let i=0;i<n;i++)particles.push({x,y,vx:rand(-65,65),vy:rand(-65,65),t:rand(.25,.55),life:.55,color,r:rand(1.4,4.1)});}
-function killAnt(a){a.health=0;emit(a.x,a.y,a.side==='red'?'#db624e':'#2f3031',6);if(a.caste==='scout'){log('Your scout fell! The colony will send another.');game.scoutRespawn=5;} }
-function fight(a,b,dt){if(a.attack>0||b.health<=0)return;const d=distance(a,b);if(d>17)return;a.attack=.52;if(a.side!==b.side){const dmg=(a.caste==='soldier'?18:a.caste==='scout'?15:8)*rand(.7,1.2);b.health-=dmg;emit(b.x,b.y,'#f7ca6c',3);if(b.health<=0)killAnt(b);}}
-function combat(dt){const live=ants.filter(a=>a.health>0);const blacks=live.filter(a=>a.side==='black'),reds=live.filter(a=>a.side==='red');for(const a of live){if(a.attack>0)continue;const opponents=a.side==='black'?reds:blacks;let closest=null,dmin=24;for(const b of opponents){const d=distance(a,b);if(d<dmin){closest=b;dmin=d;}}if(closest)fight(a,closest,dt);
-const enemyNest=NEST[a.side==='black'?'red':'black'];if(distance(a,enemyNest)<33&&(a.caste==='soldier'||a.caste==='scout')&&a.attack<=0){a.attack=.58;const damage=a.caste==='scout'?3.1:1.45;if(a.side==='black'&&game.redQueen>0){game.redQueen=Math.max(0,game.redQueen-damage);emit(enemyNest.x+rand(-8,8),enemyNest.y+rand(-8,8),'#fa8d5a',2);}else if(a.side==='red'&&game.queen>0){game.queen=Math.max(0,game.queen-damage*(1-(game.upgrades?.gate||0)*.22));emit(enemyNest.x+rand(-8,8),enemyNest.y+rand(-8,8),'#f9e2a1',2);}}
-}
-}
-function regenFood(){const f=foods.filter(f=>f.amount>0);if(f.length<8||Math.random()<.008){let x=rand(60,W-60),y=rand(60,H-60);foods.push({x,y,amount:5+Math.floor(rand(0,9)),max:18,r:rand(10,19)});}if(foods.length>60)foods=foods.filter(f=>f.amount>0);}
-function update(dt){if(game.paused||!booted)return;dt=Math.min(dt,0.06)*game.speed;game.elapsed+=dt;game.tileElapsed=(game.tileElapsed||0)+dt;phase+=dt;weatherClock+=dt;game.days=1+Math.floor(game.elapsed/28);
-if(game.won||game.queen<=0){updateFX(dt);return;}
-for(const a of ants){if(a.health<=0)continue;a.age+=dt;a.attack=Math.max(0,a.attack-dt);a.think-=dt;if(a.manual&&!a.carry){const m=a.manual;if(m.type==='gather'){const f=foods.find(f=>f.amount>0&&distance(f,m)<30);if(f)a.target={x:f.x,y:f.y};else{a.manual=null;a.target=null;}}else if(m.type==='attack'){let enemy=null,dist=105;for(const e of ants){if(e.side!=='red'||e.health<=0)continue;const d=distance(a,e);if(d<dist){enemy=e;dist=d;}}a.target=enemy?{x:enemy.x,y:enemy.y}:{x:m.x,y:m.y};}else if(distance(a,m)>13)a.target={x:m.x,y:m.y};else{a.target=null;if(m.type==='move')a.manual=null;}}if(a.think<=0&&a.caste!=='scout'&&!a.manual){a.target=targetFor(a);a.think=rand(.8,2.8);}
-if(a.caste==='scout'&&!a.target&&!a.manual){const f=nearestFood(a);if(f&&game.order==='forage'&&distance(a,f)<80)a.target={x:f.x,y:f.y,ref:f};}
-const dest=a.carry?NEST[a.side]:a.target;
-if(dest)moveTo(a,dest,dt);
-if(a.caste==='scout'&&a.target&&distance(a,a.target)<13&&!a.manual){a.target=null;}
-if(!a.carry){for(const f of foods){if(f.amount>0&&distance(a,f)<f.r+6&&(a.caste!=='soldier'||a.side==='red')){f.amount--;a.carry=true;a.foragingOrigin={x:f.x,y:f.y};a.target={...NEST[a.side]};emit(a.x,a.y,'#eff6ab',2);if(a.caste==='scout')log('Food collected — bring it to your nest!');break;}}}
-if(a.carry&&distance(a,NEST[a.side])<40){a.carry=false;if(a.side==='black'){game.food=Math.min(foodCapacity(),game.food+10);if(a.caste==='scout')log('Food delivered. Your queen can raise more ants!');}else game.redFood+=8;a.target=null;emit(a.x,a.y,'#e2eea4',2);}
-a.scent-=dt;if(a.carry&&a.scent<=0){a.scent=.23;trails.push({x:a.x,y:a.y,life:9,side:a.side,foodX:a.foragingOrigin?.x,foodY:a.foragingOrigin?.y});}
-}
-ants=ants.filter(a=>a.health>0);for(const id of selectedIds)if(!ants.some(a=>a.id===id))selectedIds.delete(id);
-for(const a of ants)if(a.caste==='scout')a.health=clamp(a.health+dt*.5,0,a.maximum);
-combat(dt);
-for(const s of spiders){s.attack-=dt;s.steps-=dt;const closest=ants.reduce((best,a)=>distance(s,a)<distance(s,best)?a:best,ants[0]);if(closest&&distance(s,closest)<155){const dx=closest.x-s.x,dy=closest.y-s.y,d=len(dx,dy)||1;s.angle=Math.atan2(dy,dx);s.x=clamp(s.x+dx/d*dt*39,20,W-20);s.y=clamp(s.y+dy/d*dt*39,20,H-20);if(d<24&&s.attack<=0){s.attack=.9;closest.health-=27;emit(closest.x,closest.y,'#dfac70',3);if(closest.health<=0)killAnt(closest);}}
-else if(s.steps<=0){s.steps=rand(1.5,4);s.angle=rand(0,TAU);}else{s.x=clamp(s.x+Math.cos(s.angle)*dt*18,25,W-25);s.y=clamp(s.y+Math.sin(s.angle)*dt*18,25,H-25);}}
-if(game.scoutRespawn){game.scoutRespawn-=dt;if(game.scoutRespawn<=0&&game.queen>0){addAnt('black','scout',NEST.black.x+20,NEST.black.y+10);game.scoutRespawn=0;log('A new golden scout is ready!');}}
-game.broodCooldown=(game.broodCooldown||3)-dt;
-if(game.broodCooldown<=0){game.broodCooldown=rand(2.2,4.1);const b=activeAnts('black').length,r=activeAnts('red').length;
-if(game.food>=24&&b+eggs.filter(e=>e.side==='black').length<unitCap()&&Math.random()<.56){game.food-=20;eggs.push({side:'black',time:rand(5,9)/(1+game.upgrades.nursery*.2),caste:'worker'});}
-if(game.redFood>=14&&r<75&&game.redQueen>0){game.redFood-=14;eggs.push({side:'red',time:rand(4,7)});}}
-for(const egg of eggs){egg.time-=dt;if(egg.time<=0){const soldiers=activeAnts(egg.side).filter(a=>a.caste==='soldier').length;const count=activeAnts(egg.side).length;addAnt(egg.side,egg.caste||(soldiers/count<.25?'soldier':'worker'));emit(NEST[egg.side].x,NEST[egg.side].y,'#ede9c8',4);}}
-eggs=eggs.filter(e=>e.time>0);
-if(game.redQueen<=0){game.won=true;game.claimed=Array.from(new Set([...game.claimed,game.tile]));game.missions=3;log(game.claimed.length===9?'The entire backyard is yours! You win!':'The red queen has fallen! Open Backyard to expand.');store();}
-if(game.queen<=0){game.paused=true;log('Your queen has fallen. Start a new colony to try again.');store();}
-if(game.missions===0&&game.food>=105){game.missions=1;log('Your colony is stocked! Grow your population.');}
-if(game.missions===1&&activeAnts('black').length>=25){game.missions=2;log('The army is ready. Defeat the red queen!');}
-regenFood();updateFX(dt);
-}
-function updateFX(dt){for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.t-=dt;}particles=particles.filter(p=>p.t>0);for(const t of trails)t.life-=dt;trails=trails.filter(t=>t.life>0);if(trails.length>700)trails.splice(0,trails.length-700);}
-function bounds(){const minZoom=Math.min(screenW/W,screenH/H)*.93;return{minZoom,maxZoom:minZoom*5};}
-function centerOnScout(reset=false){const s=scout();if(reset){const {minZoom}=bounds();camera.zoom=minZoom*1.12;}camera.x=s?s.x+245:W/2;camera.y=s?s.y: H/2;limitCamera();}
-function limitCamera(){const hw=screenW/(2*camera.zoom),hh=screenH/(2*camera.zoom);camera.x=hw>=W/2?W/2:clamp(camera.x,hw,W-hw);camera.y=hh>=H/2?H/2:clamp(camera.y,hh,H-hh);}
-function resize(){const rect=stage.getBoundingClientRect();screenW=rect.width;screenH=rect.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);camera.zoom=clamp(camera.zoom||bounds().minZoom,bounds().minZoom,bounds().maxZoom);limitCamera();}
-function sx(x){return(x-camera.x)*camera.zoom+screenW/2;}
-function sy(y){return(y-camera.y)*camera.zoom+screenH/2;}
-function worldCoords(px,py){return{x:(px-screenW/2)/camera.zoom+camera.x,y:(py-screenH/2)/camera.zoom+camera.y};}
-function zoom(mult,p={x:screenW/2,y:screenH/2}){const before=worldCoords(p.x,p.y),lim=bounds();camera.zoom=clamp(camera.zoom*mult,lim.minZoom,lim.maxZoom);const after=worldCoords(p.x,p.y);camera.x+=before.x-after.x;camera.y+=before.y-after.y;limitCamera();}
-function circle(x,y,r,color){ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fillStyle=color;ctx.fill();}
-function drawNest(n,side){ctx.save();ctx.translate(n.x,n.y);ctx.fillStyle='#2e261c30';ctx.beginPath();ctx.ellipse(6,8,56,39,0,0,TAU);ctx.fill();ctx.fillStyle=side==='black'?'#6e6046':'#815b42';ctx.beginPath();ctx.ellipse(0,0,46,32,0,0,TAU);ctx.fill();ctx.fillStyle='#403128';ctx.beginPath();ctx.ellipse(0,0,27,17,0,0,TAU);ctx.fill();ctx.strokeStyle=side==='black'?'#eeeab7':'#f29a83';ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.beginPath();ctx.ellipse(0,0,56,41,0,0,TAU);ctx.stroke();ctx.setLineDash([]);circle(-10,-4,5,'#231a16');circle(9,2,4,'#1f1914');ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 16px system-ui';ctx.fillStyle='#fff2c9';ctx.strokeStyle='#352719';ctx.lineWidth=4;const title=side==='black'?'BLACK NEST':'RED NEST';ctx.strokeText(title,0,-56);ctx.fillText(title,0,-56);ctx.restore();}
-function drawAnt(a){ctx.save();ctx.translate(a.x,a.y);ctx.rotate(a.angle);const isScout=a.caste==='scout',r=isScout?1.25:a.caste==='soldier'?1.12:1;ctx.scale(r,r);ctx.shadowBlur=5;ctx.shadowColor='#130c0960';ctx.fillStyle=a.side==='red'?RED:isScout?'#f4d15c':BLACK;const color=ctx.fillStyle;ctx.lineCap='round';ctx.strokeStyle=color;ctx.lineWidth=1.7;for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(-3,i*3);ctx.lineTo(-10,i*7-5);ctx.moveTo(1,i*3);ctx.lineTo(7,i*7+5);ctx.stroke();}ctx.beginPath();ctx.moveTo(10,-2);ctx.lineTo(16,-8);ctx.moveTo(10,2);ctx.lineTo(16,8);ctx.stroke();ctx.shadowBlur=0;ctx.beginPath();ctx.ellipse(-10,0,6,5,0,0,TAU);ctx.ellipse(0,0,5.5,4,0,0,TAU);ctx.ellipse(9,0,5.4,5,0,0,TAU);ctx.fillStyle=color;ctx.fill();circle(11,-2,1,'#fbf7df');circle(11,2,1,'#fbf7df');if(a.carry){circle(-17,-4,6,'#d9ef9e');circle(-20,-7,2,'#fff9ca');}ctx.restore();
-if(a.caste==='scout'){ctx.save();ctx.strokeStyle='#fdf3a8';ctx.lineWidth=2.5;ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(a.x,a.y,26+Math.sin(phase*4)*2,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.textAlign='center';ctx.font='bold 13px system-ui';ctx.strokeStyle='#3b2d22';ctx.lineWidth=3;ctx.strokeText('YOU',a.x,a.y-34);ctx.fillStyle='#fff1a4';ctx.fillText('YOU',a.x,a.y-34);ctx.restore();}}
-function drawSpider(s){ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.angle);ctx.strokeStyle='#342a27';ctx.lineWidth=3.5;ctx.lineCap='round';for(let i=0;i<4;i++){for(const sign of [-1,1]){ctx.beginPath();ctx.moveTo(i*5-10,sign*3);ctx.lineTo(i*6-15,sign*(15+Math.sin(phase*7+i)*3));ctx.lineTo(i*5-13,sign*25);ctx.stroke();}}circle(-4,0,12,'#46332b');circle(10,0,8,'#544037');circle(15,-3,2,'#eaac75');circle(15,3,2,'#eaac75');ctx.restore();}
-function drawSurface(){ctx.fillStyle='#a9845b';ctx.fillRect(0,0,screenW,screenH);ctx.save();ctx.translate(screenW/2,screenH/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);ctx.drawImage(background,0,0);ctx.strokeStyle='#675333';ctx.lineWidth=8;ctx.strokeRect(1,1,W-2,H-2);
-for(const r of rocks){circle(r.x+2,r.y+4,r.r,'#69574659');circle(r.x,r.y,r.r,'#9d9a89');circle(r.x-r.r*.3,r.y-r.r*.3,r.r*.46,'#d4c8a8');}
-for(const p of plants){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);ctx.strokeStyle='#4c793e';ctx.lineWidth=2.4;for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo((i-2)*p.s*.8,-p.s*.4,(i-1.5)*p.s,p.s*(i%2?-.8:.7));ctx.stroke();}ctx.restore();}
-for(const t of trails)circle(t.x,t.y,3.8,t.side==='red'?'rgba(210,72,57,'+(t.life/9*.24)+')':'rgba(222,250,140,'+(t.life/9*.24)+')');
-for(const f of foods){if(f.amount<=0)continue;circle(f.x+2,f.y+4,f.r+5,'#4c6e3140');for(let j=0;j<Math.min(f.amount,16);j++){const a=j*2.399,r=Math.sqrt(j+1)/4.5*f.r;circle(f.x+Math.cos(a)*r,f.y+Math.sin(a)*r,3.5+(j%3),'#8bac58');circle(f.x+Math.cos(a)*r-1,f.y+Math.sin(a)*r-1,1.5,'#d9e78b');}}
-drawNest(NEST.black,'black');if(game.redQueen>0)drawNest(NEST.red,'red');else circle(NEST.red.x,NEST.red.y,43,'#584b33');
-for(const a of ants)if(a.health>0&&a.caste!=='scout')drawAnt(a);for(const s of spiders)drawSpider(s);for(const a of ants)if(a.health>0&&a.caste==='scout')drawAnt(a);
-for(const p of particles){ctx.globalAlpha=clamp(p.t/p.life,0,1);circle(p.x,p.y,p.r,p.color);}ctx.globalAlpha=1;
-const s=scout();if(s&&s.target&&!s.carry){ctx.setLineDash([8,10]);ctx.lineWidth=2;ctx.strokeStyle='#ffeb8bc9';ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.target.x,s.target.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#fff6c7';ctx.lineWidth=2;ctx.beginPath();ctx.arc(s.target.x,s.target.y,12+Math.sin(phase*5)*2,0,TAU);ctx.stroke();}
-for(const a of selectedAnts()){ctx.strokeStyle='#fff1ac';ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(a.x,a.y,20,15,0,0,TAU);ctx.stroke();ctx.fillStyle='#1b2b1a';ctx.fillRect(a.x-17,a.y-25,34,4);ctx.fillStyle='#c8e68d';ctx.fillRect(a.x-17,a.y-25,34*clamp(a.health/a.maximum,0,1),4);}
-const commanded=selectedAnts().filter(a=>a.manual);
-if(commanded.length){ctx.strokeStyle='#f8eeaa9a';ctx.lineWidth=1.8;ctx.setLineDash([7,9]);for(const a of commanded.slice(0,8)){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(a.manual.x,a.manual.y);ctx.stroke();}ctx.setLineDash([]);
-const target=commanded.reduce((p,a)=>({x:p.x+a.manual.x,y:p.y+a.manual.y}),{x:0,y:0});target.x/=commanded.length;target.y/=commanded.length;
-ctx.save();ctx.translate(target.x,target.y);ctx.strokeStyle='#fff5b5';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,19+2*Math.sin(phase*4),0,TAU);ctx.stroke();ctx.strokeStyle='#543c27';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,8);ctx.lineTo(0,-24);ctx.stroke();ctx.fillStyle=commanded[0].manual.type==='attack'?'#ee8e70':commanded[0].manual.type==='gather'?'#a9db7e':'#ffe091';ctx.beginPath();ctx.moveTo(0,-24);ctx.lineTo(24,-17);ctx.lineTo(0,-10);ctx.closePath();ctx.fill();ctx.restore();}
-ctx.restore();
-if(selectionRect&&game.view==='surface'){const r=selectionRect;ctx.strokeStyle='#f6f1ae';ctx.lineWidth=2;ctx.setLineDash([6,3]);ctx.fillStyle='#d8ee9233';ctx.fillRect(Math.min(r.x,r.x2),Math.min(r.y,r.y2),Math.abs(r.x2-r.x),Math.abs(r.y2-r.y));ctx.strokeRect(Math.min(r.x,r.x2),Math.min(r.y,r.y2),Math.abs(r.x2-r.x),Math.abs(r.y2-r.y));ctx.setLineDash([]);}
-if(game.won)drawBanner('PATCH SECURED','Open Backyard to conquer the next patch','VICTORY');else if(game.queen<=0)drawBanner('COLONY LOST','Restart to begin a new colony','DEFEAT');
-else if(game.paused)drawBanner('PAUSED','Tap Resume to continue','');
-}
-function drawBanner(title,sub,eyebrow){ctx.save();ctx.fillStyle='#0a1912ab';ctx.fillRect(0,0,screenW,screenH);ctx.fillStyle='#f0f0cd';ctx.textAlign='center';ctx.font='800 13px system-ui';ctx.fillText(eyebrow,screenW/2,screenH/2-41);ctx.font='900 '+Math.min(36,screenW/10)+'px system-ui';ctx.fillText(title,screenW/2,screenH/2+1);ctx.font='500 13px system-ui';ctx.fillText(sub,screenW/2,screenH/2+26);ctx.restore();}
-function drawNestView(){const w=screenW,h=screenH;ctx.fillStyle='#8e6d49';ctx.fillRect(0,0,w,h);const line=Math.max(72,h*.20);ctx.fillStyle='#63824d';ctx.fillRect(0,0,w,line);ctx.fillStyle='#82a968';for(let i=0;i<w;i+=28){ctx.beginPath();ctx.moveTo(i,line);ctx.lineTo(i+8,line-13);ctx.lineTo(i+11,line);ctx.fill();}
-const cx=w*.5,cy=h*.55;const chambers=[{x:cx,y:cy-h*.14,rx:w*.16,ry:h*.115,name:'QUEEN CHAMBER'},{x:cx-w*.23,y:cy+h*.13,rx:w*.17,ry:h*.11,name:'FOOD STORE'},{x:cx+w*.22,y:cy+h*.13,rx:w*.18,ry:h*.11,name:'NURSERY'}];ctx.strokeStyle='#4d3224';ctx.lineWidth=clamp(w*.025,10,32);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx,line-5);ctx.lineTo(cx,cy-h*.14);ctx.lineTo(cx-w*.22,cy+h*.13);ctx.moveTo(cx,cy-h*.14);ctx.lineTo(cx+w*.22,cy+h*.13);ctx.stroke();for(const c of chambers){ctx.fillStyle='#443021';ctx.beginPath();ctx.ellipse(c.x,c.y,c.rx,c.ry,0,0,TAU);ctx.fill();ctx.strokeStyle='#c49a66';ctx.lineWidth=5;ctx.stroke();ctx.textAlign='center';ctx.font='800 '+clamp(w*.016,10,14)+'px system-ui';ctx.fillStyle='#f2dda3';ctx.fillText(c.name,c.x,c.y-c.ry-13);}
-let c=chambers[0];ctx.fillStyle='#d6b686';ctx.beginPath();ctx.ellipse(c.x,c.y,22,13,0,0,TAU);ctx.fill();circle(c.x+18,c.y,10,'#e6cda0');for(let i=0;i<Math.min(14,game.food/12);i++)circle(chambers[1].x-32+(i%7)*10,chambers[1].y-7+Math.floor(i/7)*12,7,'#c6e48c');for(let i=0;i<Math.min(15,eggs.filter(e=>e.side==='black').length+5);i++){ctx.fillStyle='#e7d8aa';ctx.beginPath();ctx.ellipse(chambers[2].x-35+(i%6)*12,chambers[2].y-13+Math.floor(i/6)*14,5,8,0,0,TAU);ctx.fill();}
-ctx.textAlign='center';ctx.font='bold 13px system-ui';ctx.fillStyle='#fcf3da';ctx.fillText('Your workers dug a safe network of tunnels.',w/2,h-20);
-}
-function tileIsFrontier(i){if(game.claimed.includes(i))return false;return game.claimed.some(c=>Math.abs((c%3)-(i%3))+Math.abs(Math.floor(c/3)-Math.floor(i/3))===1);}
-function drawYard(){const w=screenW,h=screenH;ctx.fillStyle='#506942';ctx.fillRect(0,0,w,h);const size=Math.min((w-44)/3,(h-100)/3),x0=(w-3*size)/2,y0=(h-3*size)/2+15;for(let i=0;i<9;i++){const x=x0+(i%3)*size,y=y0+Math.floor(i/3)*size,claimed=game.claimed.includes(i),front=tileIsFrontier(i);ctx.fillStyle=claimed?'#92ae64':front?'#ad976a':'#687e59';ctx.strokeStyle=i===game.tile?'#f9e99b':'#e6d9ad65';ctx.lineWidth=i===game.tile?5:2;ctx.fillRect(x+4,y+4,size-8,size-8);ctx.strokeRect(x+4,y+4,size-8,size-8);const rng=seedRng(i*37+2);for(let j=0;j<13;j++){ctx.fillStyle=claimed?'#618047':front?'#897a52':'#526b46';circle(x+13+rng()*(size-26),y+13+rng()*(size-26),1+rng()*4,ctx.fillStyle);}
-ctx.textAlign='center';ctx.font='800 '+clamp(size*.23,14,25)+'px system-ui';ctx.fillStyle='#f3eed5';ctx.fillText(claimed?'✓':front?'!':'•',x+size/2,y+size/2+6);if(i===game.tile){ctx.fillStyle='#263e29';ctx.font='bold 10px system-ui';ctx.fillText('CURRENT',x+size/2,y+size-17);}}
-ctx.fillStyle='#f6edce';ctx.font='900 '+clamp(w*.043,17,28)+'px system-ui';ctx.textAlign='center';ctx.fillText('THE BACKYARD',w/2,34);ctx.font='500 12px system-ui';ctx.fillText(game.won?'Tap a frontier tile marked ! to expand.':'Defeat the red queen to unlock the next territory.',w/2,h-23);
-game.yardRect={x:x0,y:y0,size};if(game.claimed.length===9)drawBanner('YARD CONQUERED','All nine territories belong to the black ants.','CAMPAIGN COMPLETE');
-}
-function drawMini(){const w=mini.width,h=mini.height;mc.fillStyle='#9a8758';mc.fillRect(0,0,w,h);mc.fillStyle='#5f7848';for(const f of foods){if(f.amount<=0)continue;mc.fillRect(f.x/W*w-1,f.y/H*h-1,3,3);}for(const a of ants){if(a.health<=0)continue;mc.fillStyle=a.side==='red'?'#e96d5c':a.caste==='scout'?'#ffe58f':'#202e25';mc.fillRect(a.x/W*w-1,a.y/H*h-1,3,3);}for(const side of ['black','red']){const n=NEST[side];mc.beginPath();mc.arc(n.x/W*w,n.y/H*h,5,0,TAU);mc.fillStyle=side==='red'?'#f2695c':'#e6ddaa';mc.fill();}const left=camera.x-screenW/(2*camera.zoom),top=camera.y-screenH/(2*camera.zoom);mc.lineWidth=2;mc.strokeStyle='#fffde7';mc.strokeRect(left/W*w,top/H*h,screenW/camera.zoom/W*w,screenH/camera.zoom/H*h);}
-function render(){if(!ctx)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,screenW,screenH);if(game.view==='surface')drawSurface();else if(game.view==='nest'){if(window.ColonyNest?.draw)window.ColonyNest.draw(ctx,screenW,screenH,{ants,eggs,food:game.food,queen:game.queen,upgrades:game.upgrades,phase,highlight:game.chamber});else drawNestView();}else drawYard();drawMini();}
-function updateUI(){const b=activeAnts('black'),r=activeAnts('red'),s=scout();$('blacks').textContent=b.length;$('reds').textContent=r.length;$('food').textContent=Math.floor(game.food);$('eggs').textContent=eggs.filter(e=>e.side==='black').length;$('queenHealth').textContent=Math.ceil(game.queen)+'%';$('scoutHealth').textContent=s?Math.ceil(s.health/s.maximum*100)+'%':'Rehatching';$('castes').textContent=b.filter(a=>a.caste==='worker').length+' / '+b.filter(a=>a.caste==='soldier').length;$('tiles').textContent=game.claimed.length+' / 9';$('campaignPct').textContent=Math.floor(game.claimed.length/9*100)+'%';$('campaignBar').style.width=(game.claimed.length/9*100)+'%';$('weather').textContent=Math.floor(game.elapsed/44)%4===3?'Cloudy':'Warm & dry';
-$('missionLabel').textContent='DAY '+game.days+' · TILE '+(game.tile+1);$('missionTitle').textContent=game.queen<=0?'Queen lost — restart':game.claimed.length===9?'The whole yard is yours!':game.won?'Territory won — expand':game.missions===0?'Gather 105 stored food':game.missions===1?'Raise 25 black ants':'Defeat the red queen';
-$('pause').textContent=game.paused?'▶ Resume':'Ⅱ Pause';$('pause').setAttribute('aria-pressed',String(game.paused));$('speed').textContent=game.speed+'× speed';orders.forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.order===game.order)));document.querySelectorAll('[data-quick-order]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.quickOrder===game.order)));views.forEach(el=>{const active=el.dataset.view===game.view;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});
-$('viewTitle').textContent=game.view==='surface'?'THE SURFACE':game.view==='nest'?'UNDERGROUND NEST':'BACKYARD OVERVIEW';$('viewSubtitle').textContent=game.view==='surface'?'Select ants, then tap to command':game.view==='nest'?'Tap chambers · drag to explore · pinch to zoom':'Secure territory. Expand outward.';
-stage.dataset.view=game.view;$('minimap').style.display=game.view==='surface'?'block':'none';
-const group=selectedAnts(),castes=new Set(group.map(a=>a.caste));$('selectionCount').textContent=group.length+' selected';$('selectionType').textContent=!group.length?'Pick a group':castes.size===1?group[0].caste+(group.length>1?' group':''):'Mixed colony';groupButtons.forEach(button=>{const kind=button.dataset.group,match=kind==='all'?group.length===b.length&&group.length>0:group.length>0&&group.every(a=>a.caste===kind)&&group.length===b.filter(a=>a.caste===kind).length;button.setAttribute('aria-pressed',String(match));});
-$('capacityStatus').textContent=(b.length+eggs.filter(e=>e.side==='black').length)+' / '+unitCap()+' population including brood · '+Math.floor(game.food)+' / '+foodCapacity()+' food';
-recruitButtons.forEach(button=>{button.disabled=game.food<(button.dataset.recruit==='soldier'?38:22)||b.length+eggs.filter(e=>e.side==='black').length>=unitCap()||game.queen<=0||game.won;});
-buildButtons.forEach(button=>{const kind=button.dataset.build,lv=game.upgrades[kind],maxed=lv>=3,cost=upgradeCost(kind);button.disabled=maxed||game.food<cost||game.queen<=0;$(kind+'Cost').textContent=maxed?'MAX LEVEL':cost+' food · Lv '+lv;});$('orderTitle').textContent=game.order==='attack'?'Take the offensive':game.order==='defend'?'Guard the colony':game.order==='rally'?'Rally the troops':'Lead your ants';
-}
-function order(name){game.order=name;const group=selectedAnts();if(group.length){if(name==='attack')issueCommand(NEST.red);else if(name==='defend')issueCommand(NEST.black);else if(name==='rally'){const leader=scout();if(leader)issueCommand({x:leader.x+48,y:leader.y});}else if(name==='forage'){const first=group.find(a=>a.caste==='worker')||group[0],food=nearestFood(first);if(food)issueCommand(food);}}else log(name==='attack'?'Soldiers advance toward the red nest.':name==='defend'?'Soldiers guard the queen.':name==='rally'?'Nearby ants gather around the scout.':'Workers are seeking out food.');updateUI();}
-function view(name){game.view=name;updateUI();}
-orders.forEach(el=>el.addEventListener('click',()=>order(el.dataset.order)));document.querySelectorAll('[data-quick-order]').forEach(el=>el.addEventListener('click',()=>order(el.dataset.quickOrder)));views.forEach(el=>el.addEventListener('click',()=>view(el.dataset.view)));groupButtons.forEach(button=>button.addEventListener('click',()=>selectGroup(button.dataset.group)));recruitButtons.forEach(button=>button.addEventListener('click',()=>recruit(button.dataset.recruit)));buildButtons.forEach(button=>button.addEventListener('click',()=>build(button.dataset.build)));$('clearSelection').addEventListener('click',clearSelection);
-$('pause').addEventListener('click',()=>{game.paused=!game.paused;updateUI();});$('speed').addEventListener('click',()=>{game.speed=game.speed===1?2:game.speed===2?3:.5===game.speed?1:.5;updateUI();});
-function zoomActive(factor,p={x:screenW/2,y:screenH/2}){if(game.view==='nest')window.ColonyNest?.zoom?.(factor,p.x,p.y,screenW,screenH);else if(game.view==='surface')zoom(factor,p);}
-$('zoomIn').addEventListener('click',()=>zoomActive(1.27));$('zoomOut').addEventListener('click',()=>zoomActive(1/1.27));$('center').addEventListener('click',()=>{if(game.view==='nest')window.ColonyNest?.reset?.();else centerOnScout(false);});
-$('help').addEventListener('click',()=>{$('helpDialog').hidden=false;game.paused=true;updateUI();});$('closeHelp').addEventListener('click',()=>{$('helpDialog').hidden=true;game.paused=false;updateUI();});$('resumeFromHelp').addEventListener('click',()=>{$('helpDialog').hidden=true;game.paused=false;updateUI();});
-function reset(){try{localStorage.removeItem(STORAGE);}catch(e){}game=initialGame();newTile(4,true);game.missions=0;game.elapsed=0;game.days=1;game.scoutRespawn=0;game.broodCooldown=2;$('helpDialog').hidden=true;game.paused=false;updateUI();store();}
-$('newGame').addEventListener('click',()=>{if(confirm('Start a new colony and erase your current progress?'))reset();});
-$('resetGame').addEventListener('click',()=>{if(confirm('Erase your saved colony and start over?'))reset();});
-$('startGame').addEventListener('click',()=>{$('intro').hidden=true;booted=true;game.paused=false;store();updateUI();});
-function yardClick(p){if(!game.won||!game.yardRect)return;const r=game.yardRect;const col=Math.floor((p.x-r.x)/r.size),row=Math.floor((p.y-r.y)/r.size);if(col<0||col>2||row<0||row>2)return;const tile=row*3+col;if(tileIsFrontier(tile)){game.missions=2;newTile(tile);game.view='surface';updateUI();}else if(!game.claimed.includes(tile))log('Secure a neighboring territory first.');}
-function handleTap(x,y,append=false,forceCommand=false){if(game.view==='yard'){yardClick({x,y});return;}if(game.view==='nest'){const room=window.ColonyNest?.pick?.(x,y,screenW,screenH);if(room){game.chamber=room;const names={queen:'Royal chamber',storage:'Granary',nursery:'Egg nursery',barracks:'Soldier gallery',larvae:'Larvae chamber',refuse:'Waste chamber'};log(names[room]+' selected. Expand chambers using the command panel.');updateUI();}return;}if(game.view!=='surface'||game.won||game.queen<=0)return;const pos=worldCoords(x,y);if(!forceCommand&&selectAt(pos,append))return;issueCommand(pos);}
-function eventPosition(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
-let lastPinch=null;
-canvas.addEventListener('pointerdown',e=>{
-  if(e.button===2)e.preventDefault();
-  canvas.setPointerCapture(e.pointerId);
-  const p=eventPosition(e);
-  touches.set(e.pointerId,{...p,startX:p.x,startY:p.y,lastX:p.x,lastY:p.y,moved:false,button:e.button,mouse:e.pointerType==='mouse',shift:e.shiftKey===true});
-  if(touches.size===2){lastPinch=null;selectionRect=null;}
-});
-canvas.addEventListener('pointermove',e=>{
-  if(!touches.has(e.pointerId))return;
-  const p=eventPosition(e),t=touches.get(e.pointerId);
-  t.x=p.x;t.y=p.y;
-  const arr=Array.from(touches.values());
-  if(arr.length===2){
-    const a=arr[0],b=arr[1],mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},sep=len(a.x-b.x,a.y-b.y);
-    if(lastPinch){if(game.view==='surface'){camera.x-=(mid.x-lastPinch.mid.x)/camera.zoom;camera.y-=(mid.y-lastPinch.mid.y)/camera.zoom;zoom(sep/Math.max(1,lastPinch.sep),mid);limitCamera();}else if(game.view==='nest'){window.ColonyNest?.pan?.(mid.x-lastPinch.mid.x,mid.y-lastPinch.mid.y,screenW,screenH);window.ColonyNest?.zoom?.(sep/Math.max(1,lastPinch.sep),mid.x,mid.y,screenW,screenH);}}
-    lastPinch={mid,sep};
-  }else if(arr.length===1){
-    if(len(t.x-t.startX,t.y-t.startY)>11)t.moved=true;
-    if(t.mouse&&t.button===0&&game.view==='surface'){
-      if(t.moved)selectionRect={x:t.startX,y:t.startY,x2:t.x,y2:t.y};
-    }else if(t.moved||t.button===2){
-      if(game.view==='surface'){camera.x+=(t.lastX-t.x)/camera.zoom;camera.y+=(t.lastY-t.y)/camera.zoom;limitCamera();}else if(game.view==='nest'){window.ColonyNest?.pan?.(t.x-t.lastX,t.y-t.lastY,screenW,screenH);}
+  const E=window.ColonyEngine,R=window.ColonyRender;
+  const SAVE='colony-firstlight-v2';
+  const $=id=>document.getElementById(id);
+  const canvas=$('world'),ctx=canvas.getContext('2d',{alpha:false}),stage=$('stage');
+  const by=(selector)=>Array.from(document.querySelectorAll(selector));
+  const modeButtons=by('[data-mode]'),groupButtons=by('[data-group]'),viewButtons=by('[data-view]');
+  const cameras={surface:{x:0,y:0,zoom:1},nest:{x:0,y:0,zoom:1}};
+  let state=null,rafLast=0,accumulator=0,clock=0,autosave=0,uiDelay=0,lastStep=-1,firstResize=true,screen={w:400,h:570,dpr:1};
+  let touches=new Map(),pinch=null,selectionBox=null;
+  function save(){
+    if(!state||state.firstLaunch)return;
+    try{localStorage.setItem(SAVE,JSON.stringify({...state,paused:false,firstLaunch:false}));}catch(e){}
+  }
+  function load(){
+    try{return E.normalize(JSON.parse(localStorage.getItem(SAVE)||'null'));}catch(e){return null;}
+  }
+  function start(){
+    if(!state)return;
+    state.firstLaunch=false;state.paused=false;
+    $('intro').hidden=true;save();updateUI();
+  }
+  function fresh(){
+    state=E.create();state.paused=true;lastStep=0;
+    cameras.surface={x:0,y:0,zoom:1};cameras.nest={x:0,y:0,zoom:1};
+    $('endDialog').hidden=true;$('helpDialog').hidden=true;$('intro').hidden=false;
+    firstResize=true;resize();updateUI();
+    try{localStorage.removeItem(SAVE);}catch(e){}
+  }
+  function resize(){
+    const bounds=stage.getBoundingClientRect();
+    screen.w=Math.max(120,bounds.width);screen.h=Math.max(220,bounds.height);
+    screen.dpr=Math.min(2,window.devicePixelRatio||1);
+    canvas.width=Math.round(screen.w*screen.dpr);
+    canvas.height=Math.round(screen.h*screen.dpr);
+    if(firstResize){firstResize=false;focus({x:275,y:330},'surface');}
+    else{R.limit(cameras.surface,'surface',screen.w,screen.h);R.limit(cameras.nest,'nest',screen.w,screen.h);}
+  }
+  function focus(p,view=state.view){
+    const world=view==='nest'?{w:E.constants.C*E.constants.CELL,h:E.constants.R*E.constants.CELL}:{w:E.constants.SW,h:E.constants.SH};
+    const camera=cameras[view];
+    const scale=Math.max(screen.w/world.w,screen.h/world.h)*camera.zoom;
+    const center={x:world.w/2,y:world.h/2};
+    camera.x=(center.x-p.x)*scale;camera.y=(center.y-p.y)*scale;
+    R.limit(camera,view,screen.w,screen.h);
+  }
+  function setView(v){state.view=v;updateUI();}
+  function focusObjective(){
+    const m=state.mission;
+    if(m.step===1){setView('nest');focus(E.constants.NURSERY,'nest');return;}
+    setView('surface');
+    const where=m.step===2?E.constants.BORDER:m.step===3?E.constants.PORTAL:m.step>=4?E.constants.OUTPOST:{x:300,y:330};
+    focus(where,'surface');
+  }
+  function toast(msg){
+    $('eventText').textContent=msg;
+    const el=$('eventToast');el.hidden=false;
+    el.classList.add('pop');
+    clearTimeout(toast.timer);
+    toast.timer=setTimeout(()=>{el.hidden=true;el.classList.remove('pop');},4400);
+  }
+  function groupLabel(){
+    const selected=E.selected(state),roles=new Set(selected.map(a=>a.role));
+    return selected.length===0?'Nothing selected':roles.size===1?(selected[0].role+'s selected'):'Mixed squad selected';
+  }
+  function uiObjective(){
+    const o=E.objective(state),m=state.mission;
+    $('objectiveCount').textContent=m.complete?'COMPLETE':'STEP '+(m.step+1)+' / 5';
+    $('objectiveTitle').textContent=o.title;
+    $('objectiveDetail').textContent=o.hint;
+    $('objectiveCounter').textContent=o.counter;
+    $('objectiveProgress').style.width=Math.round(o.progress*100)+'%';
+    $('objectiveFocus').textContent=o.action;
+  }
+  function updateUI(){
+    if(!state)return;
+    uiObjective();
+    const black=state.ants.filter(a=>a.side==='black'&&a.hp>0);
+    const workers=black.filter(a=>a.role==='worker').length;
+    const soldiers=black.filter(a=>a.role==='soldier').length;
+    const brood=state.eggs.filter(e=>e.side==='black').length;
+    $('food').textContent=Math.floor(state.food);
+    $('workers').textContent=workers;
+    $('soldiers').textContent=soldiers;
+    $('brood').textContent=brood;
+    $('queenHealth').textContent=Math.ceil(state.queenHP)+'%';
+    $('elapsed').textContent=Math.floor(state.elapsed/60)+':'+String(Math.floor(state.elapsed%60)).padStart(2,'0');
+    $('viewHeading').textContent=state.view==='surface'?'SURFACE · FIRST LIGHT':'UNDERGROUND · YOUR NEST';
+    $('viewHint').textContent=state.view==='surface'?'Tap an ant to select · tap the ground to command':'Tap soil to excavate · drag to explore';
+    $('selectedCount').textContent=E.selected(state).length+' SELECTED';
+    $('selectedSummary').textContent=groupLabel();
+    $('selectedStatus').textContent=state.mode.toUpperCase()+' ORDER';
+    $('logMessage').textContent=state.lastLog||state.logs.at(-1)||'A new queen has founded the colony.';
+    viewButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===state.view)));
+    groupButtons.forEach(b=>{
+      const role=b.dataset.group,all=black.filter(a=>role==='all'||a.role===role);
+      b.setAttribute('aria-pressed',String(all.length>0&&all.length===E.selected(state).length&&all.every(a=>state.selected.includes(a.id))));
+    });
+    modeButtons.forEach(b=>{
+      b.setAttribute('aria-pressed',String(b.dataset.mode===state.mode));
+      if(b.dataset.mode==='dig')b.hidden=state.mission.step!==1||state.view!=='nest';
+    });
+    $('nestTools').hidden=state.mission.step!==1;
+    $('planDig').disabled=state.nest.digQueue.length>=12||E.ColonyFirstLightDug?.(state.mission)===6;
+    $('buildNursery').disabled=state.nest.nursery||state.mission.cells.filter(v=>v>=1).length<6||state.food<45;
+    $('trainSoldier').disabled=!E.canTrain(state,'soldier');
+    $('trainWorker').disabled=!E.canTrain(state,'worker');
+    $('buildProgress').textContent=state.mission.cells.filter(v=>v>=1).length+' / 6 CELLS DUG';
+    $('nestBuildLabel').textContent=state.nest.nursery?'Nursery built':'Build nursery · 45 food';
+    $('pause').textContent=state.paused?'▶ Resume':'Ⅱ Pause';
+    $('pause').setAttribute('aria-pressed',String(state.paused));
+    $('speed').textContent=state.speed+'×';
+    stage.dataset.view=state.view;
+    const q=state.nest.digQueue.length;
+    $('queueCount').textContent=q+' marked';
+    $('statusHint').textContent=state.mission.step===3?'RED RAID! Protect the queen':state.mission.step===4?'Destroy the red outpost and hold':state.mission.step===1?'Excavate six cells then build the nursery':'The colony is alive';
+    if(state.ended&&!$('endDialog').hidden)return;
+    if(state.ended)showEnd();
+  }
+  function showEnd(){
+    const victory=state.ended==='victory';
+    $('endTitle').textContent=victory?'First Light secured!':'The queen has fallen';
+    $('endEyebrow').textContent=victory?'TERRITORY WON':'COLONY LOST';
+    $('endText').textContent=victory
+      ?'Your ants survived their first battle and claimed the red outpost. The colony is ready to spread.'
+      :'Your colony was overwhelmed. Try a stronger defense at the entrance and keep your soldiers together.';
+    $('endStatistics').textContent=Math.floor(state.mission.delivered)+' food delivered · '+
+      state.mission.cells.filter(v=>v>=1).length+' cells excavated · '+
+      Math.floor(state.elapsed/60)+'m '+Math.floor(state.elapsed%60)+'s';
+    $('endDialog').hidden=false;save();
+  }
+  function selectBoxUnits(rect,append=false){
+    const chosen=state.ants.filter(a=>{
+      if(a.hp<=0||a.side!=='black'||a.layer!==state.view)return false;
+      const t=R.fit(state.view,screen.w,screen.h,cameras[state.view]);
+      const x=a.x*t.scale+t.offsetX,y=a.y*t.scale+t.offsetY;
+      return x>=Math.min(rect.x,rect.x2)&&x<=Math.max(rect.x,rect.x2)
+        &&y>=Math.min(rect.y,rect.y2)&&y<=Math.max(rect.y,rect.y2);
+    }).map(a=>a.id);
+    state.selected=append?Array.from(new Set([...state.selected,...chosen])):chosen;
+    updateUI();
+  }
+  function tap(p,button=0,append=false){
+    if(state.paused||state.ended)return;
+    const world=R.locate(p.x,p.y,state.view,screen.w,screen.h,cameras[state.view]);
+    if(button===0&&E.selectOne(state,state.view,world,append)){updateUI();return;}
+    if(state.view==='nest'){
+      if(state.mission.step!==1){toast('The nest is safe. Focus on your current objective.');return;}
+      const cell=E.cellAt(world);
+      if(E.queueDig(state,cell.c,cell.r))toast('Workers marked a new soil cell.');
+      else toast('Choose unexcavated soil next to the tunnel network.');
+    }else E.issue(state,world);
+    updateUI();
+  }
+  function pointerPosition(e){const rect=canvas.getBoundingClientRect();return{x:e.clientX-rect.left,y:e.clientY-rect.top};}
+  canvas.addEventListener('pointerdown',e=>{
+    if(e.button===2)e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    const p=pointerPosition(e);
+    touches.set(e.pointerId,{...p,startX:p.x,startY:p.y,lastX:p.x,lastY:p.y,moved:false,button:e.button,mouse:e.pointerType==='mouse',shift:!!e.shiftKey});
+    if(touches.size>1)pinch=null;
+  });
+  canvas.addEventListener('pointermove',e=>{
+    const t=touches.get(e.pointerId);if(!t)return;
+    const p=pointerPosition(e);
+    t.x=p.x;t.y=p.y;
+    if(touches.size===2){
+      const [a,b]=[...touches.values()],mid={x:(a.x+b.x)*.5,y:(a.y+b.y)*.5};
+      const d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(pinch){R.pan(cameras[state.view],mid.x-pinch.mid.x,mid.y-pinch.mid.y,state.view,screen.w,screen.h);
+        R.zoom(cameras[state.view],d/Math.max(5,pinch.d),mid,state.view,screen.w,screen.h);}
+      pinch={mid,d};a.moved=true;b.moved=true;
+    }else{
+      if(Math.hypot(t.x-t.startX,t.y-t.startY)>9)t.moved=true;
+      if(t.moved&&t.mouse&&t.shift&&t.button===0){
+        selectionBox={x:t.startX,y:t.startY,x2:t.x,y2:t.y};
+      }else if(t.moved){
+        R.pan(cameras[state.view],t.x-t.lastX,t.y-t.lastY,state.view,screen.w,screen.h);
+      }
     }
     t.lastX=t.x;t.lastY=t.y;
-  }
-});
-function endPointer(e){
-  const t=touches.get(e.pointerId);
-  if(!t)return;
-  touches.delete(e.pointerId);
-  if(touches.size===0){
-    if(selectionRect&&t.mouse&&t.button===0&&game.view==='surface'){
-      selectBox(selectionRect,t.shift);
-    }else if(!t.moved&&len(t.x-t.startX,t.y-t.startY)<16&&!lastPinch){
-      handleTap(t.x,t.y,t.shift,t.button===2);
+  });
+  function release(e){
+    const t=touches.get(e.pointerId);if(!t)return;
+    touches.delete(e.pointerId);
+    if(touches.size===0){
+      if(selectionBox)selectBoxUnits(selectionBox,t.shift);
+      else if(!t.moved&&!pinch&&Math.hypot(t.x-t.startX,t.y-t.startY)<14)tap(t,t.button,t.shift);
+      pinch=null;selectionBox=null;
     }
-    selectionRect=null;lastPinch=null;
   }
-}
-canvas.addEventListener('pointerup',endPointer);
-canvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);selectionRect=null;lastPinch=null;});
-canvas.addEventListener('contextmenu',e=>e.preventDefault());
-canvas.addEventListener('wheel',e=>{e.preventDefault();if(game.view==='surface'||game.view==='nest')zoomActive(e.deltaY<0?1.14:.87,eventPosition(e));},{passive:false});
-mini.addEventListener('pointerdown',e=>{
-  e.preventDefault();if(game.view!=='surface')return;
-  const rect=mini.getBoundingClientRect(),x=clamp((e.clientX-rect.left)/rect.width*W,0,W),y=clamp((e.clientY-rect.top)/rect.height*H,0,H);
-  if(e.button===2)issueCommand({x,y});
-  else{camera.x=x;camera.y=y;limitCamera();}
-});
-window.addEventListener('keydown',e=>{if($('intro').hidden===false||$('helpDialog').hidden===false)return;const map={ArrowUp:[0,-64],ArrowDown:[0,64],ArrowLeft:[-64,0],ArrowRight:[64,0],w:[0,-64],s:[0,64],a:[-64,0],d:[64,0]};if(map[e.key]&&game.view==='surface'){e.preventDefault();const s=scout();if(s)s.target={x:clamp(s.x+map[e.key][0],0,W),y:clamp(s.y+map[e.key][1],0,H)};}if(e.code==='Space'){e.preventDefault();game.paused=!game.paused;updateUI();}if(e.key==='1')selectGroup('worker');if(e.key==='2')selectGroup('soldier');if(e.key==='3')selectGroup('all');if(e.key==='Escape')clearSelection();});
-window.addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{if(document.hidden)store();});window.addEventListener('pagehide',store);
-function loop(now){const dt=lastTime?Math.min((now-lastTime)/1000,.05):.016;lastTime=now;update(dt);render();uiTimer+=dt;saveTimer+=dt;if(uiTimer>.3){uiTimer=0;updateUI();}if(saveTimer>11){saveTimer=0;store();}requestAnimationFrame(loop);}
-function bootstrap(){saved=load();game=saved||initialGame();const snapshot=saved&&saved.snapshot;delete game.snapshot;makeObjects();spawnPopulation();if(snapshot&&Array.isArray(snapshot.ants)&&Array.isArray(snapshot.foods)){const validAnts=snapshot.ants.filter(a=>a&&Number.isFinite(a.x)&&Number.isFinite(a.y)&&Number.isFinite(a.health)&&['black','red'].includes(a.side)&&['worker','soldier','scout'].includes(a.caste)).slice(0,190);if(validAnts.length){ants=validAnts;antId=Math.max(antId,...ants.map(a=>a.id||0));}foods=snapshot.foods.filter(f=>f&&Number.isFinite(f.x)&&Number.isFinite(f.y)&&Number.isFinite(f.amount)).slice(0,75);eggs=Array.isArray(snapshot.eggs)?snapshot.eggs.filter(e=>e&&Number.isFinite(e.time)&&['black','red'].includes(e.side)).slice(0,100):[];spiders=Array.isArray(snapshot.spiders)?snapshot.spiders.filter(a=>a&&Number.isFinite(a.x)&&Number.isFinite(a.y)).slice(0,10):spiders;trails=Array.isArray(snapshot.trails)?snapshot.trails.filter(t=>t&&Number.isFinite(t.x)&&Number.isFinite(t.y)&&Number.isFinite(t.life)).slice(-350):[];}if(saved&&Array.isArray(saved.selected)){selectedIds=new Set(saved.selected.filter(id=>ants.some(a=>a.id===id&&a.side==='black'&&a.health>0)));}if(!selectedIds.size&&scout())selectedIds.add(scout().id);resize();centerOnScout(true);if(!saved)game.broodCooldown=2;booted=!!saved;if(saved){$('intro').hidden=true;log('Welcome back. Your workers and stores have been restored.');}else{$('intro').hidden=false;game.paused=true;log('The queen has founded a new nest.');}updateUI();requestAnimationFrame(loop);}
-bootstrap();
+  canvas.addEventListener('pointerup',release);
+  canvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);selectionBox=null;pinch=null;});
+  canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  canvas.addEventListener('wheel',e=>{e.preventDefault();R.zoom(cameras[state.view],e.deltaY<0?1.13:.89,pointerPosition(e),state.view,screen.w,screen.h);},{passive:false});
+  by('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+  by('[data-group]').forEach(b=>b.addEventListener('click',()=>{E.selectGroup(state,b.dataset.group);updateUI();}));
+  by('[data-mode]').forEach(b=>b.addEventListener('click',()=>{E.setMode(state,b.dataset.mode);updateUI();}));
+  by('[data-train]').forEach(b=>b.addEventListener('click',()=>{
+    if(E.train(state,b.dataset.train))toast('Egg laid. Watch your nursery for a new '+b.dataset.train+'.');
+    else toast(state.lastLog);
+    updateUI();
+  }));
+  $('buildNursery').addEventListener('click',()=>{
+    if(E.buildNursery(state))toast('New nursery constructed!');
+    else toast(state.lastLog);updateUI();
+  });
+  $('planDig').addEventListener('click',()=>{
+    if(E.planNest(state))toast('Six nursery passage cells marked for excavation.');
+    else toast('The passage is already planned.');updateUI();
+  });
+  $('objectiveFocus').addEventListener('click',focusObjective);
+  $('pause').addEventListener('click',()=>{state.paused=!state.paused;updateUI();});
+  $('speed').addEventListener('click',()=>{state.speed=state.speed===1?2:state.speed===2?.5:1;updateUI();});
+  $('zoomIn').addEventListener('click',()=>R.zoom(cameras[state.view],1.28,{x:screen.w/2,y:screen.h/2},state.view,screen.w,screen.h));
+  $('zoomOut').addEventListener('click',()=>R.zoom(cameras[state.view],1/1.28,{x:screen.w/2,y:screen.h/2},state.view,screen.w,screen.h));
+  $('center').addEventListener('click',focusObjective);
+  $('startGame').addEventListener('click',start);
+  $('help').addEventListener('click',()=>{$('helpDialog').hidden=false;state.paused=true;updateUI();});
+  $('closeHelp').addEventListener('click',()=>{$('helpDialog').hidden=true;state.paused=false;updateUI();});
+  $('retry').addEventListener('click',fresh);
+  $('newGame').addEventListener('click',()=>{if(confirm('Restart First Light? Current progress will be replaced.'))fresh();});
+  window.addEventListener('keydown',e=>{
+    if(!$('intro').hidden||!$('helpDialog').hidden||!$('endDialog').hidden)return;
+    if(e.key==='1')E.selectGroup(state,'worker');
+    if(e.key==='2')E.selectGroup(state,'soldier');
+    if(e.key==='3')E.selectGroup(state,'all');
+    if(e.key==='Escape')state.selected=[];
+    if(e.code==='Space'){e.preventDefault();state.paused=!state.paused;}
+    if(e.key.toLowerCase()==='n')setView(state.view==='nest'?'surface':'nest');
+    updateUI();
+  });
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
+  window.addEventListener('pagehide',save);
+  window.addEventListener('resize',resize);
+  function frame(now){
+    const dt=Math.min(.1,Math.max(0,(now-(rafLast||now-16))/1000));
+    rafLast=now;clock+=dt;
+    if(!state.paused&&!state.ended){
+      accumulator+=dt;let cycles=0;
+      while(accumulator>=1/30&&cycles<5){const before=state.mission.step;
+        E.update(state,1/30);
+        accumulator-=1/30;cycles++;
+        if(state.mission.step!==before){
+          toast(state.lastLog);save();if(state.mission.step===1)focus(E.constants.NURSERY,'nest');
+          else if(state.mission.step===2)focus(E.constants.BORDER,'surface');
+          else if(state.mission.step===3)focus(E.constants.PORTAL,'surface');
+          else if(state.mission.step===4)focus(E.constants.OUTPOST,'surface');
+        }
+        if(state.ended)break;
+      }
+    }else accumulator=0;
+    ctx.setTransform(screen.dpr,0,0,screen.dpr,0,0);
+    ctx.clearRect(0,0,screen.w,screen.h);
+    R.draw(ctx,state,screen.w,screen.h,cameras,clock);
+    if(selectionBox){
+      ctx.strokeStyle='#f8eba2';ctx.fillStyle='#f8eba229';ctx.lineWidth=1.5;
+      const r=selectionBox,x=Math.min(r.x,r.x2),y=Math.min(r.y,r.y2),w=Math.abs(r.x2-r.x),h=Math.abs(r.y2-r.y);
+      ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);
+    }
+    uiDelay+=dt;autosave+=dt;
+    if(uiDelay>.16){uiDelay=0;updateUI();}
+    if(autosave>8){autosave=0;save();}
+    requestAnimationFrame(frame);
+  }
+  const loaded=load();
+  if(loaded){state=loaded;state.firstLaunch=false;$('intro').hidden=true;lastStep=state.mission.step;}
+  else{state=E.create();state.paused=true;$('intro').hidden=false;}
+  resize();updateUI();requestAnimationFrame(frame);
 })();
