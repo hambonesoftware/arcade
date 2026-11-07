@@ -165,13 +165,58 @@ function yardClick(p){if(!game.won||!game.yardRect)return;const r=game.yardRect;
 function handleTap(x,y,append=false,forceCommand=false){if(game.view==='yard'){yardClick({x,y});return;}if(game.view==='nest'){const room=window.ColonyNest?.pick?.(x,y,screenW,screenH);if(room){game.chamber=room;const names={queen:'Royal chamber',storage:'Granary',nursery:'Egg nursery',barracks:'Soldier gallery',larvae:'Larvae chamber',refuse:'Waste chamber'};log(names[room]+' selected. Expand chambers using the command panel.');updateUI();}return;}if(game.view!=='surface'||game.won||game.queen<=0)return;const pos=worldCoords(x,y);if(!forceCommand&&selectAt(pos,append))return;issueCommand(pos);}
 function eventPosition(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
 let lastPinch=null;
-canvas.addEventListener('pointerdown',e=>{if(e.button===2)e.preventDefault();canvas.setPointerCapture(e.pointerId);const p=eventPosition(e);touches.set(e.pointerId,{...p,startX:p.x,startY:p.y,lastX:p.x,lastY:p.y,moved:false,button:e.button});if(touches.size===2)lastPinch=null;});
-canvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;const p=eventPosition(e),t=touches.get(e.pointerId);t.x=p.x;t.y=p.y;const arr=Array.from(touches.values());if(arr.length===2){const a=arr[0],b=arr[1],mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},sep=len(a.x-b.x,a.y-b.y);if(lastPinch){camera.x-=(mid.x-lastPinch.mid.x)/camera.zoom;camera.y-=(mid.y-lastPinch.mid.y)/camera.zoom;zoom(sep/Math.max(1,lastPinch.sep),mid);}lastPinch={mid,sep};limitCamera();}else if(arr.length===1){if(len(t.x-t.startX,t.y-t.startY)>11)t.moved=true;if(t.moved||t.button===2){camera.x+=(t.lastX-t.x)/camera.zoom;camera.y+=(t.lastY-t.y)/camera.zoom;limitCamera();}t.lastX=t.x;t.lastY=t.y;}});
-function endPointer(e){const t=touches.get(e.pointerId);if(!t)return;touches.delete(e.pointerId);if(touches.size===0){if(!t.moved&&len(t.x-t.startX,t.y-t.startY)<16&&!lastPinch&&t.button!==2)handleTap(t.x,t.y);lastPinch=null;}}
-canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);lastPinch=null;});canvas.addEventListener('contextmenu',e=>e.preventDefault());canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.14:.87,eventPosition(e));},{passive:false});
-window.addEventListener('keydown',e=>{if($('intro').hidden===false||$('helpDialog').hidden===false)return;const map={ArrowUp:[0,-64],ArrowDown:[0,64],ArrowLeft:[-64,0],ArrowRight:[64,0],w:[0,-64],s:[0,64],a:[-64,0],d:[64,0]};if(map[e.key]&&game.view==='surface'){e.preventDefault();const s=scout();if(s)s.target={x:clamp(s.x+map[e.key][0],0,W),y:clamp(s.y+map[e.key][1],0,H)};}if(e.code==='Space'){e.preventDefault();game.paused=!game.paused;updateUI();}});
+canvas.addEventListener('pointerdown',e=>{
+  if(e.button===2)e.preventDefault();
+  canvas.setPointerCapture(e.pointerId);
+  const p=eventPosition(e);
+  touches.set(e.pointerId,{...p,startX:p.x,startY:p.y,lastX:p.x,lastY:p.y,moved:false,button:e.button,mouse:e.pointerType==='mouse',shift:e.shiftKey===true});
+  if(touches.size===2){lastPinch=null;selectionRect=null;}
+});
+canvas.addEventListener('pointermove',e=>{
+  if(!touches.has(e.pointerId))return;
+  const p=eventPosition(e),t=touches.get(e.pointerId);
+  t.x=p.x;t.y=p.y;
+  const arr=Array.from(touches.values());
+  if(arr.length===2){
+    const a=arr[0],b=arr[1],mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},sep=len(a.x-b.x,a.y-b.y);
+    if(lastPinch){camera.x-=(mid.x-lastPinch.mid.x)/camera.zoom;camera.y-=(mid.y-lastPinch.mid.y)/camera.zoom;zoom(sep/Math.max(1,lastPinch.sep),mid);}
+    lastPinch={mid,sep};limitCamera();
+  }else if(arr.length===1){
+    if(len(t.x-t.startX,t.y-t.startY)>11)t.moved=true;
+    if(t.mouse&&t.button===0&&game.view==='surface'){
+      if(t.moved)selectionRect={x:t.startX,y:t.startY,x2:t.x,y2:t.y};
+    }else if(t.moved||t.button===2){
+      if(game.view==='surface'){camera.x+=(t.lastX-t.x)/camera.zoom;camera.y+=(t.lastY-t.y)/camera.zoom;limitCamera();}
+    }
+    t.lastX=t.x;t.lastY=t.y;
+  }
+});
+function endPointer(e){
+  const t=touches.get(e.pointerId);
+  if(!t)return;
+  touches.delete(e.pointerId);
+  if(touches.size===0){
+    if(selectionRect&&t.mouse&&t.button===0&&game.view==='surface'){
+      selectBox(selectionRect,t.shift);
+    }else if(!t.moved&&len(t.x-t.startX,t.y-t.startY)<16&&!lastPinch){
+      handleTap(t.x,t.y,t.shift,t.button===2);
+    }
+    selectionRect=null;lastPinch=null;
+  }
+}
+canvas.addEventListener('pointerup',endPointer);
+canvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);selectionRect=null;lastPinch=null;});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(game.view==='surface')zoom(e.deltaY<0?1.14:.87,eventPosition(e));},{passive:false});
+mini.addEventListener('pointerdown',e=>{
+  e.preventDefault();if(game.view!=='surface')return;
+  const rect=mini.getBoundingClientRect(),x=clamp((e.clientX-rect.left)/rect.width*W,0,W),y=clamp((e.clientY-rect.top)/rect.height*H,0,H);
+  if(e.button===2)issueCommand({x,y});
+  else{camera.x=x;camera.y=y;limitCamera();}
+});
+window.addEventListener('keydown',e=>{if($('intro').hidden===false||$('helpDialog').hidden===false)return;const map={ArrowUp:[0,-64],ArrowDown:[0,64],ArrowLeft:[-64,0],ArrowRight:[64,0],w:[0,-64],s:[0,64],a:[-64,0],d:[64,0]};if(map[e.key]&&game.view==='surface'){e.preventDefault();const s=scout();if(s)s.target={x:clamp(s.x+map[e.key][0],0,W),y:clamp(s.y+map[e.key][1],0,H)};}if(e.code==='Space'){e.preventDefault();game.paused=!game.paused;updateUI();}if(e.key==='1')selectGroup('worker');if(e.key==='2')selectGroup('soldier');if(e.key==='3')selectGroup('all');if(e.key==='Escape')clearSelection();});
 window.addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{if(document.hidden)store();});window.addEventListener('pagehide',store);
 function loop(now){const dt=lastTime?Math.min((now-lastTime)/1000,.05):.016;lastTime=now;update(dt);render();uiTimer+=dt;saveTimer+=dt;if(uiTimer>.3){uiTimer=0;updateUI();}if(saveTimer>11){saveTimer=0;store();}requestAnimationFrame(loop);}
-function bootstrap(){saved=load();game=saved||initialGame();const snapshot=saved&&saved.snapshot;delete game.snapshot;makeObjects();spawnPopulation();if(snapshot&&Array.isArray(snapshot.ants)&&Array.isArray(snapshot.foods)){const validAnts=snapshot.ants.filter(a=>a&&Number.isFinite(a.x)&&Number.isFinite(a.y)&&Number.isFinite(a.health)&&['black','red'].includes(a.side)&&['worker','soldier','scout'].includes(a.caste)).slice(0,190);if(validAnts.length){ants=validAnts;antId=Math.max(antId,...ants.map(a=>a.id||0));}foods=snapshot.foods.filter(f=>f&&Number.isFinite(f.x)&&Number.isFinite(f.y)&&Number.isFinite(f.amount)).slice(0,75);eggs=Array.isArray(snapshot.eggs)?snapshot.eggs.filter(e=>e&&Number.isFinite(e.time)&&['black','red'].includes(e.side)).slice(0,100):[];spiders=Array.isArray(snapshot.spiders)?snapshot.spiders.filter(a=>a&&Number.isFinite(a.x)&&Number.isFinite(a.y)).slice(0,10):spiders;trails=Array.isArray(snapshot.trails)?snapshot.trails.filter(t=>t&&Number.isFinite(t.x)&&Number.isFinite(t.y)&&Number.isFinite(t.life)).slice(-350):[];}resize();centerOnScout(true);if(!saved)game.broodCooldown=2;booted=!!saved;if(saved){$('intro').hidden=true;log('Welcome back. Your workers and stores have been restored.');}else{$('intro').hidden=false;game.paused=true;log('The queen has founded a new nest.');}updateUI();requestAnimationFrame(loop);}
+function bootstrap(){saved=load();game=saved||initialGame();const snapshot=saved&&saved.snapshot;delete game.snapshot;makeObjects();spawnPopulation();if(snapshot&&Array.isArray(snapshot.ants)&&Array.isArray(snapshot.foods)){const validAnts=snapshot.ants.filter(a=>a&&Number.isFinite(a.x)&&Number.isFinite(a.y)&&Number.isFinite(a.health)&&['black','red'].includes(a.side)&&['worker','soldier','scout'].includes(a.caste)).slice(0,190);if(validAnts.length){ants=validAnts;antId=Math.max(antId,...ants.map(a=>a.id||0));}foods=snapshot.foods.filter(f=>f&&Number.isFinite(f.x)&&Number.isFinite(f.y)&&Number.isFinite(f.amount)).slice(0,75);eggs=Array.isArray(snapshot.eggs)?snapshot.eggs.filter(e=>e&&Number.isFinite(e.time)&&['black','red'].includes(e.side)).slice(0,100):[];spiders=Array.isArray(snapshot.spiders)?snapshot.spiders.filter(a=>a&&Number.isFinite(a.x)&&Number.isFinite(a.y)).slice(0,10):spiders;trails=Array.isArray(snapshot.trails)?snapshot.trails.filter(t=>t&&Number.isFinite(t.x)&&Number.isFinite(t.y)&&Number.isFinite(t.life)).slice(-350):[];}if(saved&&Array.isArray(saved.selected)){selectedIds=new Set(saved.selected.filter(id=>ants.some(a=>a.id===id&&a.side==='black'&&a.health>0)));}if(!selectedIds.size&&scout())selectedIds.add(scout().id);resize();centerOnScout(true);if(!saved)game.broodCooldown=2;booted=!!saved;if(saved){$('intro').hidden=true;log('Welcome back. Your workers and stores have been restored.');}else{$('intro').hidden=false;game.paused=true;log('The queen has founded a new nest.');}updateUI();requestAnimationFrame(loop);}
 bootstrap();
 })();
