@@ -103,8 +103,8 @@ test('RTS selection and manual orders move chosen workers',()=>{
   e.selectGroup(s,'worker');
   assert.equal(s.selected.length,4);
   e.setMode(s,'move');
-  e.issue(s,{x:495,y:325});
-  advance(e,s,260);
+  e.issue(s,{x:476,y:244});
+  advance(e,s,150);
   const chosen=e.selected(s);
   assert.ok(chosen.some(a=>a.layer==='surface'&&a.x>200),'selected worker should honor movement command');
   assert.ok(chosen.every(a=>a.stance==='move'||a.stance==='auto'));
