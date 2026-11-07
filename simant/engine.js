@@ -191,6 +191,12 @@ function travel(a,p,dt,speed){
   }
   function workerTick(s,a,dt){
     if(a.hp<=0)return;
+    if(a.carry>0){workForage(s,a,dt);return;}
+    if((a.stance==='move'||a.stance==='defend')&&a.moveOrder){
+      if(!cross(s,a,'surface',dt))return;
+      if(travel(a,a.moveOrder,dt,64)&&a.stance==='move'){a.stance='auto';a.moveOrder=null;}
+      a.task='field command';return;
+    }
     if(s.mission.step===1&&s.nest.digQueue.length>0&&a.id%2===0&&workDig(s,a,dt))return;
     workForage(s,a,dt);
   }
@@ -324,13 +330,10 @@ function travel(a,p,dt,speed){
       if(a.role==='worker')workerTick(s,a,dt);
       else if(a.role==='soldier')soldierTick(s,a,dt);
       else if(a.role==='scout'){
+        if(a.carry>0||a.stance==='forage'){workForage(s,a,dt);continue;}
         if(a.moveOrder){
           if(!cross(s,a,'surface',dt))continue;
-          travel(a,a.moveOrder,dt,107);
-          if(a.stance==='forage'){
-            const f=s.foodNodes.find(f=>f.amount>0&&dist(a,f)<22);
-            if(f){f.amount=max(0,f.amount-5);s.food=min(240,s.food+5);m.delivered+=5;a.moveOrder=null;}
-          }
+          if(travel(a,a.moveOrder,dt,107)&&a.stance==='move'){a.moveOrder=null;a.stance='auto';}
         }else if(a.layer==='surface')travel(a,{x:PORTAL.x+34,y:PORTAL.y-20},dt,82);
       }
     }
