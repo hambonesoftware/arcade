@@ -73,11 +73,35 @@
     for(const f of s.foodNodes){if(f.amount<1)continue;let d=dist(f,a);if(d<score){score=d;best=f;}}
     return best;
   }
-  function travel(a,p,dt,speed){
+  
+  // All underground movement follows the player's excavated tunnel graph.
+  // Surface and nest use one ant object; entering the mound is a real transfer.
+  function travelNest(s,a,p,dt,speed=65){
+    const from={c:clamp(Math.floor(a.x/CELL),0,C-1),r:clamp(Math.floor(a.y/CELL),0,R-1)};
+    const to={c:clamp(Math.floor(p.x/CELL),0,C-1),r:clamp(Math.floor(p.y/CELL),0,R-1)};
+    const source=index(from.c,from.r),dest=index(to.c,to.r);
+    if(source===dest)return travel(a,p,dt,speed);
+    const prev=new Int32Array(C*R).fill(-1),front=[source];prev[source]=source;
+    for(let head=0;head<front.length;head++){
+      const n=front[head];if(n===dest)break;
+      const c=n%C,r=Math.floor(n/C);
+      for(const [nx,ny] of neighbors(c,r)){
+        const next=index(nx,ny);
+        if(prev[next]!==-1||!s.nest.cells[next])continue;
+        prev[next]=n;front.push(next);
+      }
+    }
+    if(prev[dest]===-1)return false;
+    let next=dest;
+    while(prev[next]!==source&&prev[next]!==next&&prev[next]!==-1)next=prev[next];
+    const waypoint=cellPos(next%C,Math.floor(next/C));
+    travel(a,waypoint,dt,speed);
+    return false;
+  }
+function travel(a,p,dt,speed){
     if(!p)return false;
     const dx=p.x-a.x,dy=p.y-a.y,d=Math.hypot(dx,dy);
     if(d<5)return true;
-    const step=min(d,(speed||a.role==='scout'?90:65)*dt);
     const vel=speed||(a.role==='scout'?107:a.role==='soldier'?78:64);
     const actual=min(d,vel*dt);
     a.x+=dx/d*actual;a.y+=dy/d*actual;a.angle=Math.atan2(dy,dx);a.swing+=dt*9;
@@ -87,7 +111,7 @@
   function nestEntry(a){a.layer='nest';a.x=NEST_ENT.x;a.y=NEST_ENT.y;a.task='';}
   function cross(a,layer,dt){
     if(a.layer===layer)return true;
-    if(a.layer==='nest'&&layer==='surface'){if(travel(a,NEST_ENT,dt,75))surfaceEntry(a);return false;}
+    if(a.layer==='nest'&&layer==='surface'){if(travelNest(s,a,NEST_ENT,dt,75))surfaceEntry(a);return false;}
     if(a.layer==='surface'&&layer==='nest'){if(travel(a,PORTAL,dt,75))nestEntry(a);return false;}
     return false;
   }
@@ -136,7 +160,7 @@
     if(!q)return false;
     if(!cross(a,'nest',dt))return true;
     const site=adjacentOpen(s,q.c,q.r);
-    if(!travel(a,site,dt,67))return true;
+    if(!travelNest(s,a,site,dt,67))return true;
     q.progress+=dt*(a.role==='worker'?.29:.1);
     a.swing+=dt*18;a.task='dig';
     if(q.progress>=1){
@@ -149,7 +173,7 @@
   function workForage(s,a,dt){
     if(a.carry>0){
       if(!cross(a,'nest',dt))return;
-      if(travel(a,STORE,dt,65)){
+      if(travelNest(s,a,STORE,dt,65)){
         const weight=a.carry;a.carry=0;s.food=min(240,s.food+weight);
         s.mission.delivered+=weight;
         a.task='unload';a.foodNodeId=null;
@@ -228,7 +252,7 @@
   function spawnRaid(s){
     if(s.mission.raidSpawned)return;
     s.mission.raidSpawned=true;
-    for(let i=0;i<5;i++){
+    for(let i=0;i<3;i++){
       const a=ant('raider','surface',OUTPOST.x+(i%2)*12,OUTPOST.y+(i-2)*16,'red');
       a.stance='raid';s.ants.push(a);s.mission.raidIds.push(a.id);
     }
@@ -252,7 +276,7 @@
     const enemy=s.ants.filter(e=>e.side==='black'&&e.hp>0&&e.layer===a.layer).sort((x,y)=>dist(x,a)-dist(y,a))[0];
     if(enemy&&dist(enemy,a)<80){travel(a,enemy,dt,73);return;}
     if(!cross(a,'nest',dt))return;
-    travel(a,QUEEN,dt,76);
+    travelNest(s,a,QUEEN,dt,76);
     if(dist(a,QUEEN)<42&&a.attackCooldown<=0){s.queenHP=max(0,s.queenHP-5);a.attackCooldown=1;}
   }
   function combatTick(s,dt){
@@ -287,7 +311,8 @@
     const ready=s.eggs.filter(e=>e.remaining<=0);
     s.eggs=s.eggs.filter(e=>e.remaining>0);
     for(const egg of ready){
-      const a=ant(egg.role,'nest',NURSERY.x-32,NURSERY.y-20);
+      const spawn=s.nest.nursery?NURSERY:QUEEN;
+      const a=ant(egg.role,'nest',spawn.x-12,spawn.y+8);
       s.ants.push(a);
       if(egg.role==='soldier')writeLog(s,'A soldier has hatched. Add it to your army!');
     }
