@@ -214,9 +214,26 @@ function travel(a,p,dt,speed){
     writeLog(s,'Brood queued: '+role+'.');
     return true;
   }
+  function nurseryConnected(s){
+    const start=index(Math.floor(QUEEN.x/CELL),Math.floor(QUEEN.y/CELL));
+    const target=index(Math.floor(NURSERY.x/CELL),Math.floor(NURSERY.y/CELL));
+    if(!s.nest.cells[start]||!s.nest.cells[target])return false;
+    const seen=new Set([start]),front=[start];
+    for(let i=0;i<front.length;i++){
+      const at=front[i];
+      if(at===target)return true;
+      const c=at%C,r=Math.floor(at/C);
+      for(const [nx,ny] of neighbors(c,r)){
+        const j=index(nx,ny);
+        if(!seen.has(j)&&s.nest.cells[j]){seen.add(j);front.push(j);}
+      }
+    }
+    return false;
+  }
   function buildNursery(s){
     if(s.ended||s.mission.step!==1)return false;
     if(Mission.dug(s.mission)<6){writeLog(s,'Excavate six cells before building the nursery.');return false;}
+    if(!nurseryConnected(s)){writeLog(s,'Nursery site is disconnected. Use Mark nursery tunnel and let workers clear the path.');return false;}
     if(s.food<45){writeLog(s,'The nursery requires 45 stored food.');return false;}
     s.food-=45;s.nest.nursery=true;
     s.nest.cells[index(14,5)]=1;s.nest.cells[index(13,5)]=1;
@@ -354,6 +371,6 @@ function travel(a,p,dt,speed){
   function objective(s){return Mission.objective(s.mission,s.ants.filter(a=>a.side==='black'&&a.role==='soldier'&&a.hp>0).length,s.nest.nursery?1:0);}
   function cellAt(p){return {c:Math.floor(p.x/CELL),r:Math.floor(p.y/CELL)};}
   window.ColonyEngine={create,normalize,update,objective,selected,selectGroup,selectOne,setMode,issue,queueDig,planNest,
-    train,canTrain,buildNursery,cellAt,writeLog,
+    train,canTrain,buildNursery,nurseryConnected,cellAt,writeLog,
     constants:{SW,SH,C,R,CELL,PORTAL,OUTPOST,BORDER,NEST_ENT,QUEEN,STORE,NURSERY,recommended}};
 })();
