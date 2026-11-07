@@ -1,41 +1,58 @@
-# Colony — Ant World
+# COLONY — First Light
 
-An original mobile-first, browser-playable ant-colony strategy game, inspired by the *genre* of classic simulation games such as Maxis's **SimAnt** (1991). This is an independent homage, not a port or redistribution of the commercial game.
+A complete, original ant-colony real-time strategy mission built for the browser and touch screens. Start with **four workers, one scout, one queen and 25 food**. Build the colony beneath an ordinary backyard, train defenders, survive a red-ant raid and capture the first enemy outpost.
+
+This version **replaces the previous Ant World sandbox completely**. The old decorative nest module, scout-only victory system and nine-tile campaign have been removed. The new mission uses a new save schema and does **not** load the old sandbox save.
 
 **Play:** https://hambonesoftware.github.io/arcade/simant/
 
 **Source:** https://github.com/hambonesoftware/arcade/tree/main/simant
 
-## What's new — RTS and living nest
+## Real gameplay
 
-- **Select and command:** Tap individual black ants, select the scout, all workers, all soldiers, or all ants with the unit toolbar. Desktop players can marquee-select; Shift adds units to the current selection.
-- **Squad orders:** Tap the surface to move, a food patch to gather, or a red army/nest to attack. The command banner, selection rings, health bars and destination flags make orders visible. Red ants still use autonomous AI.
-- **Economy:** Recruit workers (22 food) and soldiers (38 food), with explicit incubation queues plus limited automatic worker production. Colony population and food storage are capped.
-- **Nest upgrades:** Excavate the nursery (increased population capacity and faster worker incubation), enlarge the granary (increased food capacity) or fortify the nest entrance (reduced queen damage); each can be upgraded three times.
-- **Detailed underground nest:** A new illustrated cross-section draws an entrance mound, layered soil, stones, roots, interconnected tunnels, royal chamber with queen and attendants, granary, nursery, larvae chamber, soldier gallery and refuse chamber. Moving ant traffic is derived from the living colony population.
-- **Nest inspection:** Tap chambers for their name; pinch or use +/− to zoom, drag to pan, and use the center control to reset the view.
-- **Campaign:** Fight the red queen across nine backyard patches. Pheromone trails, predators, brood and free-running workers continue to behave autonomously.
-- **Save and installation:** Store actual ants, orders, brood, resources, upgrades, and campaign in localStorage. Install as a PWA, with the nest renderer cached for offline use.
+1. **Feed the first brood** — Deliver 45 food in the granary. Black workers physically travel to surface seed nodes, pick up food, cross the entrance, follow connected underground tunnels, and deliver it to the granary. Reward: two worker eggs and excavation unlocked.
+2. **Room to grow** — Mark soil cells for excavation, then wait while workers follow existing tunnels and dig six new connected cells. Spend 45 food to construct the nursery. Reward: 50 food and soldier training.
+3. **The contested border** — Hatch three soldiers and hold the glowing seed border for 18 seconds.
+4. **Defend the queen** — Three red raiders advance through the surface entrance into the same underground tunnel network. Defend the queen for 45 seconds. Enemy ants and friendly soldiers can fight in either layer. Lose if the queen dies.
+5. **Secure the patch** — Attack the enemy forward outpost until its health reaches zero; hold its ground for 16 seconds to win First Light.
+
+Food is a limited resource, brood hatches after a delay, and the army exists as individual moving ants. Underground digging is persistent geometry, not a decorative animation.
+
+The surface and nest are **two views of one simulation**, not two independent boards. Ants remain the same entities as they travel through the entrance.
 
 ## Controls
 
-- **Mobile:** Use the selection toolbar under the world canvas. Tap an ant to select it; tap empty ground to order your selection. Pan the surface or nest by dragging, and pinch to zoom. The four field-order buttons sit on the surface but disappear in nest view so you can see the chambers.
-- **Desktop:** Click an ant to select; left-drag a rectangle to select a squad; Shift-click or Shift-drag to extend selection. Right-click gives the current selection an order; right-drag pans. Mouse wheel zooms. Select groups with **1** (workers), **2** (soldiers), **3** (everyone); **Escape** clears selection.
-- **Nest:** Select Nest, zoom in, and tap a named chamber. The scene is an animated sectional view of the colony, not an independently simulated second set of ants.
-- **Backyard:** After a patch is secured, click/tap an adjacent frontier tile to continue the campaign.
+- **Touch:** Tap an ant or use Scout / Workers / Soldiers / All to select a group. Choose Move / Forage / Attack / Defend and tap a destination. Drag to pan; pinch to zoom. Select Nest and tap unexcavated soil to queue digs, or use *Mark nursery tunnel* to plan a six-cell route automatically.
+- **Desktop:** Click an ant, use group buttons, and issue orders on the ground. Shift-drag draws a multiple-unit selection box; drag normally to pan, scroll to zoom.
+- **Keyboard:** 1 Workers, 2 Soldiers, 3 All; N switches between surface and nest; Space pauses.
+- **Production:** Recruit a worker for 18 food or a soldier for 30 food after the nursery is built. A nursery costs 45 food and six completed tunnel cells.
+- **Camera:** Surface and underground have independent pan/zoom cameras. The top-right crosshair focuses the current objective.
 
-## Tests
+The **top mission card** always tells you the next action, progress, and current goal. The game has a clear win screen, a defeat state, a restart button and an automatic local save.
 
-From the Arcade repository root, run `npm test`. The checks cover the shared HUD library as well as Colony startup, selection, RTS orders, troop recruitment, costed upgrades, saved-game restoration, touch gestures, chamber picking and rendering.
+## Implementation
 
-## Publishing
+- `firstlight.js` — Objective definitions, progress counters and mission state validation.
+- `engine.js` — Entire simulation: ants, brood, gathering, shared portal, excavated tunnel graph and pathfinding, squad orders, recruitment, enemy raid, outpost battle and win/loss.
+- `renderer.js` — Original procedural canvas artwork for surface terrain, ants, food caches, entrance mound, carved soil, brood, queen and enemy outpost.
+- `game.js` — Camera, pointer events, mobile controls, UI, local saves and fixed-timestep simulation loop.
+- `index.html` — Responsive iPhone, iPad and desktop interface.
+- `sw.js` and `manifest.webmanifest` — Installable PWA and network-first offline cache.
 
-This folder is published through the parent Arcade repository's GitHub Actions Pages workflow. The site is a static app, so GitHub Pages can host it without server-side infrastructure.
+No network requests, backend, account, third-party art or runtime library is needed for the game. Save format: `colony-firstlight-v2` in device-local storage.
 
-After changes to `game.js`, also bump the cache version in `sw.js` if you need to force an offline cache refresh on installed home-screen apps. The service worker currently uses network-first fetching for immediate updates whenever online.
+## Testing and publishing
 
-## Copyright / attribution
+At the Arcade repository root run `npm test`. Automated tests cover the fresh start, real food hauling, underground corridor integrity, excavation, construction, squad commands, recruitment, complete five-stage victory path, queen defeat, save/restore and both render views.
 
-The original **SimAnt: The Electronic Ant Colony** is associated with Maxis / Electronic Arts. All gameplay code, visual rendering, interface styling, text and the app icon in this folder are newly written. This work does not contain proprietary SimAnt sprites, music, source code, manual pages or packaged game files and is **not affiliated** with Maxis or Electronic Arts.
+The site's existing GitHub Actions Pages workflow runs `npm test` and, if successful, publishes the static repository at the Play URL above.
+
+## Future direction
+
+After First Light is solid, extend the design into a multi-territory campaign, with connected colonies, weather, predators, more strategic enemy AI and distinct mission types. See [GAME_DESIGN.md](GAME_DESIGN.md). **Those features are future plans, not present gameplay.**
+
+## Independent work
+
+This is an original game inspired by classic ant-colony simulations. *SimAnt: The Electronic Ant Colony* is associated with Maxis/Electronic Arts. No proprietary SimAnt artwork, audio, game files, manuals or code are used. This project is not affiliated with or endorsed by Maxis or Electronic Arts.
 
 Made for Hambone Arcade.
