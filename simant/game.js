@@ -105,11 +105,11 @@
     });
     $('nestTools').hidden=state.mission.step!==1;
     $('planDig').disabled=state.nest.digQueue.length>=12||state.mission.cells.filter(v=>v>=1).length>=6;
-    $('buildNursery').disabled=state.nest.nursery||state.mission.cells.filter(v=>v>=1).length<6||state.food<45;
+    $('buildNursery').disabled=state.nest.nursery||state.mission.cells.filter(v=>v>=1).length<6||!E.nurseryConnected(state)||state.food<45;
     $('trainSoldier').disabled=!E.canTrain(state,'soldier');
     $('trainWorker').disabled=!E.canTrain(state,'worker');
     $('buildProgress').textContent=state.mission.cells.filter(v=>v>=1).length+' / 6 CELLS DUG';
-    $('nestBuildLabel').textContent=state.nest.nursery?'Nursery built':'Build nursery · 45 food';
+    $('nestBuildLabel').textContent=state.nest.nursery?'Nursery built':!E.nurseryConnected(state)?'Connect the nursery passage':'Build nursery · 45 food';
     $('pause').textContent=state.paused?'▶ Resume':'Ⅱ Pause';
     $('pause').setAttribute('aria-pressed',String(state.paused));
     $('speed').textContent=state.speed+'×';
