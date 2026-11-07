@@ -23,7 +23,7 @@ button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto
 .terrain-title{position:absolute;top:13px;left:14px;pointer-events:none;border:1px solid #fff4;background:#14251edb;border-radius:12px;padding:8px 12px;backdrop-filter:blur(10px)}.terrain-title strong{display:block;font-size:12px;letter-spacing:.04em}.terrain-title span{color:#c4d0b4;font-size:11px}
 .stage-actions{position:absolute;top:12px;right:12px;display:flex;gap:5px}
 .quick-orders{display:none;position:absolute;top:68px;left:8px;flex-direction:column;gap:5px;z-index:2}.quick-order{width:57px;height:49px;border-radius:11px;border:1px solid #ecedc04d;color:#f8f6dc;background:#15271ddc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;backdrop-filter:blur(9px);font-size:19px;line-height:1}.quick-order span{font-size:9px;line-height:1;font-weight:850}.quick-order[aria-pressed="true"]{background:#e3edb4;color:#243522;border-color:#e3edb4;box-shadow:0 2px 12px #0005}.iconbtn{width:38px;height:38px;display:grid;place-items:center;background:#1c2b24e6;border:1px solid #ffffff44;border-radius:11px;color:#f6efd9;font-size:21px;box-shadow:0 4px 10px #0003}
-#minimap{position:absolute;bottom:13px;right:13px;width:122px;height:82px;border:2px solid #e5e4bc;border-radius:8px;background:#40533c;box-shadow:0 4px 12px #0006;pointer-events:none}
+#minimap{position:absolute;bottom:13px;right:13px;width:122px;height:82px;border:2px solid #e5e4bc;border-radius:8px;background:#40533c;box-shadow:0 4px 12px #0006;pointer-events:auto;cursor:crosshair}
 .context{position:absolute;bottom:13px;left:14px;display:flex;align-items:center;gap:8px;max-width:calc(100% - 154px);background:#14221de8;border:1px solid #d8dab03b;border-radius:13px;padding:8px 11px;font-weight:700;font-size:11px;color:#eff5d9;backdrop-filter:blur(10px)}.context .dot{width:8px;height:8px;background:#e9c272;border-radius:100%;box-shadow:0 0 0 4px #e9c27230;flex:none}
 .tabbar{display:flex;align-items:center;gap:8px;padding-top:10px;flex-wrap:wrap}.tabbar .btn{flex:1;min-width:90px}.tabbar .spacer{flex:1}
 .side{display:flex;flex-direction:column;gap:11px}.sidecard{background:linear-gradient(155deg,#22342a,#192720);border:1px solid #46543d;border-radius:18px;padding:17px}.eyebrow{font-size:10px;letter-spacing:.16em;color:#c2d18c;font-weight:900;text-transform:uppercase;margin-bottom:9px}.sidecard h2{font-size:22px;letter-spacing:-.04em;margin:0 0 9px;line-height:1.1}.sidecard p{font-size:13px;line-height:1.52;color:#b7c2b0;margin:0 0 12px}.progress{height:9px;background:#15231b;border-radius:20px;overflow:hidden;border:1px solid #526245}.progress b{height:100%;display:block;width:0%;background:linear-gradient(90deg,#d6ef8a,#f6d18a);transition:width .3s}
@@ -126,18 +126,18 @@ button:disabled{opacity:.35;cursor:not-allowed}.app{max-width:1630px;margin:auto
 <div class="heroicon">🐜</div><div class="eyebrow">A WORLD BENEATH YOUR FEET</div>
 <h1>Tiny ants.<br><span>Epic ambitions.</span></h1>
 <p>Build a thriving black-ant colony, gather food, command your golden scout, and push back the rival red ants. Your backyard is waiting.</p>
-<div class="steps"><div class="step"><b>01 — Gather.</b> Tap on food to guide your scout. Workers also forage and follow scent trails.</div><div class="step"><b>02 — Grow.</b> Bring home enough food and the queen will produce new workers and soldiers.</div><div class="step"><b>03 — Conquer.</b> Rally an army, destroy the red queen, and expand into the next patch.</div></div>
+<div class="steps"><div class="step"><b>01 — Select.</b> Tap one ant or use the Scout, Workers, Soldiers and All buttons to select a group. Drag a rectangle with the mouse to select multiple ants.</div><div class="step"><b>02 — Command.</b> Tap ground to move the selected units, a food patch to gather, or the red colony to attack. Orders set your army's stance.</div><div class="step"><b>03 — Grow and conquer.</b> Spend food on workers, soldiers and nest upgrades. Defeat the red queen to unlock the next backyard tile.</div></div>
 <button class="btn primary start" id="startGame">Start your colony ↗</button><div class="fineprint">Auto-saves on this device · Touch, mouse & keyboard · No sign-in</div>
 </div></div>
 <div class="modal" id="helpDialog" hidden><div class="dialog">
 <div class="eyebrow">FIELD MANUAL</div><h1>How to <span>play.</span></h1>
 <div class="steps">
-<div class="step"><b>Golden scout:</b> Tap or click a destination to move. Tap near a food clump to collect it; return to the black nest to deposit.</div>
-<div class="step"><b>Orders:</b> Forage sends escorts to food, Rally recruits nearby workers, Attack encourages soldier combat, and Defend guards the queen.</div>
-<div class="step"><b>More ants:</b> The queen automatically lays eggs when enough food is stored. Eggs hatch into workers and soldiers.</div>
+<div class="step"><b>RTS unit selection:</b> Tap an ant to select it or choose Scout, Workers, Soldiers or All. Tap terrain to command. On desktop, left-drag a selection rectangle, right-drag to pan or right-click to order units.</div>
+<div class="step"><b>Commands:</b> Forage directs workers to food, Rally groups ants around the scout, Attack sends troops toward enemies, and Defend secures your nest. Recruitment and chamber upgrades cost stored food.</div>
+<div class="step"><b>More ants:</b> Spend 22 food for a worker or 38 for a soldier. The queen also raises some workers automatically. Upgrade chambers to grow your colony's capacity.</div>
 <div class="step"><b>Fight:</b> Move your scout or rallied soldiers close to red ants. Destroy the red queen to claim the patch.</div>
 <div class="step"><b>Backyard:</b> After winning a tile, open Backyard and tap an adjacent frontier tile to expand.</div>
-<div class="step"><b>View controls:</b> Drag with two fingers to pan, pinch to zoom, or use + / −. A single tap sets your scout's destination. Mouse wheel zooms; arrow keys move your scout.</div>
+<div class="step"><b>View controls:</b> On touch, drag to pan and pinch to zoom. On desktop, drag a selection rectangle; use right-drag or the minimap to pan. In Nest view, tap chambers for details. Keyboard: 1 workers, 2 soldiers, 3 all, Escape deselect.</div>
 </div><button class="btn primary start" id="closeHelp">Back to colony</button><div class="control-row"><button class="btn subtle" id="resetGame">Reset saved colony</button><button class="btn subtle" id="resumeFromHelp">Resume</button></div>
 </div></div>
 </body></html>
