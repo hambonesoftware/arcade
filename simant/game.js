@@ -36,7 +36,7 @@ function targetFor(a){const n=NEST[a.side],enemy=NEST[a.side==='black'?'red':'bl
 if(a.carry)return n;
 if(a.caste==='worker'){
  if(a.side==='black'&&game.order==='rally'&&scout()&&distance(a,scout())<205)return {x:scout().x+rand(-27,27),y:scout().y+rand(-27,27)};
- const f=nearestFood(a);return f?{x:f.x,y:f.y,ref:f}:n;}
+ let scent=null,scentScore=-Infinity;for(const t of trails){if(t.side!==a.side||!Number.isFinite(t.foodX)||!Number.isFinite(t.foodY)||t.life<1)continue;const d=distance(a,t);if(d>115)continue;const remaining=foods.some(f=>f.amount>0&&len(f.x-t.foodX,f.y-t.foodY)<24);if(!remaining)continue;const score=t.life*2.3-d*.13;if(score>scentScore){scent=t;scentScore=score;}}if(scent&&Math.random()<.68)return {x:scent.foodX+rand(-9,9),y:scent.foodY+rand(-9,9)};const f=nearestFood(a);return f?{x:f.x,y:f.y,ref:f}:n;}
  if(a.side==='red'){const nudge=game.tileElapsed>95?enemy:{x:650,y:360};return {x:nudge.x+rand(-160,160),y:nudge.y+rand(-155,155)};}
  if(game.order==='attack')return {x:enemy.x+rand(-50,50),y:enemy.y+rand(-50,50)};
  if(game.order==='rally'&&scout())return {x:scout().x+rand(-55,55),y:scout().y+rand(-55,55)};
@@ -59,9 +59,9 @@ if(a.caste==='scout'&&!a.target){const f=nearestFood(a);if(f&&game.order==='fora
 const dest=a.carry?NEST[a.side]:a.target;
 if(dest)moveTo(a,dest,dt);
 if(a.caste==='scout'&&a.target&&distance(a,a.target)<13){a.target=null;}
-if(!a.carry){for(const f of foods){if(f.amount>0&&distance(a,f)<f.r+6&&(a.caste!=='soldier'||a.side==='red')){f.amount--;a.carry=true;a.target={...NEST[a.side]};emit(a.x,a.y,'#eff6ab',2);if(a.caste==='scout')log('Food collected — bring it to your nest!');break;}}}
+if(!a.carry){for(const f of foods){if(f.amount>0&&distance(a,f)<f.r+6&&(a.caste!=='soldier'||a.side==='red')){f.amount--;a.carry=true;a.foragingOrigin={x:f.x,y:f.y};a.target={...NEST[a.side]};emit(a.x,a.y,'#eff6ab',2);if(a.caste==='scout')log('Food collected — bring it to your nest!');break;}}}
 if(a.carry&&distance(a,NEST[a.side])<40){a.carry=false;if(a.side==='black'){game.food+=10;if(a.caste==='scout')log('Food delivered. Your queen can raise more ants!');}else game.redFood+=8;a.target=null;emit(a.x,a.y,'#e2eea4',2);}
-a.scent-=dt;if(a.carry&&a.scent<=0){a.scent=.23;trails.push({x:a.x,y:a.y,life:9,side:a.side});}
+a.scent-=dt;if(a.carry&&a.scent<=0){a.scent=.23;trails.push({x:a.x,y:a.y,life:9,side:a.side,foodX:a.foragingOrigin?.x,foodY:a.foragingOrigin?.y});}
 }
 ants=ants.filter(a=>a.health>0);
 for(const a of ants)if(a.caste==='scout')a.health=clamp(a.health+dt*.5,0,a.maximum);
