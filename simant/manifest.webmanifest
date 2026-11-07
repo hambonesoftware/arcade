@@ -1,13 +1,13 @@
 {
-  "name": "Colony — Ant World",
+  "name": "Colony — First Light RTS",
   "short_name": "Colony",
-  "description": "A tiny backyard, a mighty ant colony.",
+  "description": "Raise your colony, excavate tunnels and survive the red-ant raid.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0f1915",
-  "theme_color": "#17231d",
+  "background_color": "#181c17",
+  "theme_color": "#212b20",
   "icons": [
     {
       "src": "./icon.svg",
