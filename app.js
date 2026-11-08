@@ -2,214 +2,269 @@
 
 /*
  * Hambone Arcade project catalog.
- * Set playable: true only for projects with a browser version.
- * A project's URL is derived from its exact, case-sensitive GitHub repo name.
- * To add a project, copy an object below and change its values.
+ * Only playable browser games belong in this curated catalog.
+ * Project URL overrides are used for game-specific pages or build branches.
+ * Keep the exact repository casing when adding a new game.
  */
 const PROJECTS = [
   {
-    id: 'colony',
-    repo: 'arcade',
-    url: 'https://hambonesoftware.github.io/arcade/simant/',
-    sourcePath: '/tree/main/simant',
-    title: 'Colony: First Light',
-    category: 'Worlds',
-    type: 'Two-layer ant colony RTS',
-    description: 'Build a living nest, excavate tunnels, train an army, survive a raid and conquer your first red-ant outpost.',
-    emoji: '🐜',
-    sideEmoji: '🌿',
-    colors: ['#88ad63', '#2c4c37', '#f4d478'],
-    playable: true,
-    featured: true
+    "id": "garagegauntlet",
+    "repo": "garage-gauntlet",
+    "title": "Garage Gauntlet: Railway Rush",
+    "category": "Racing",
+    "type": "Unity slot-car racing",
+    "description": "Race die-cast slot cars through a miniature railway town. Manage the trigger, master the curves, and dodge the train crossing.",
+    "emoji": "🏎️",
+    "sideEmoji": "🚂",
+    "colors": [
+      "#d18c51",
+      "#463c70",
+      "#ffdd91"
+    ],
+    "playable": true,
+    "featured": true
   },
   {
-    id: 'sprayworks',
-    repo: 'sprayworks',
-    title: 'SprayWorks',
-    category: 'Worlds',
-    type: 'Clockwork adventure',
-    description: 'A tiny crew repairs a giant clock. Scrub the gears, carry them across the workshop, and bring the machine to life.',
-    emoji: '⚙️',
-    sideEmoji: '🧑‍🔧',
-    colors: ['#9a55a8', '#342665', '#ffcb66'],
-    playable: true,
-    featured: true
+    "id": "colony",
+    "repo": "arcade",
+    "url": "https://hambonesoftware.github.io/arcade/simant/",
+    "sourcePath": "/tree/main/simant",
+    "title": "Colony: First Light",
+    "category": "Strategy",
+    "type": "Ant colony RTS",
+    "description": "Dig tunnels, gather food, train defenders, survive an enemy raid, and claim territory above and below the ground.",
+    "emoji": "🐜",
+    "sideEmoji": "🌿",
+    "colors": [
+      "#88ad63",
+      "#2c4c37",
+      "#f4d478"
+    ],
+    "playable": true,
+    "featured": true
   },
   {
-    id: 'mechanicalworld',
-    repo: 'mechanicalWorld',
-    title: 'Mechanical World: REDLINE',
-    category: 'Physics',
-    type: '3D mechanical stress-testing lab',
-    description: 'Engineer an I-beam, test it under load, and watch stress, deformation and a dramatic tearing failure.',
-    emoji: '🔩',
-    sideEmoji: '⚡',
-    colors: ['#c58b51', '#3b5e68', '#f8d29b'],
-    playable: true,
-    featured: true
+    "id": "maplejunction",
+    "repo": "rcCars",
+    "url": "https://hambonesoftware.github.io/rcCars/maple-junction.html",
+    "title": "Maple Junction Loop",
+    "category": "Racing",
+    "type": "Miniature town racing",
+    "description": "Race three laps through a tiny HO railway town filled with shops, scenic hills, winding streets, and moving trains.",
+    "emoji": "🏘️",
+    "sideEmoji": "🚙",
+    "colors": [
+      "#a3a878",
+      "#345d59",
+      "#e8dda9"
+    ],
+    "playable": true,
+    "featured": true
   },
   {
-    id: 'marblemerge',
-    repo: 'marbleMerge',
-    title: 'Marble Merge',
-    category: 'Physics',
-    type: '3D marble racing',
-    description: 'Glossy marbles careen down a wooden racecourse packed with funnels, wild drops, and mechanical obstacles.',
-    emoji: '🔮',
-    sideEmoji: '🏁',
-    colors: ['#3b92b4', '#292d72', '#8fddff'],
-    playable: true,
-    featured: true
+    "id": "microbackyard",
+    "repo": "rcCars",
+    "title": "Micro Mayhem: Backyard Blitz",
+    "category": "Racing",
+    "type": "3D RC buggy racing",
+    "description": "Boost a miniature RC buggy around a giant backyard, hit the jumps, and challenge three AI rivals.",
+    "emoji": "🚙",
+    "sideEmoji": "🌳",
+    "colors": [
+      "#c88758",
+      "#37626e",
+      "#fae18b"
+    ],
+    "playable": true,
+    "featured": true
   },
   {
-    id: 'facesandheels',
-    repo: 'faces-and-heels',
-    title: 'Faces & Heels',
-    category: 'Arcade',
-    type: 'Wrestling showdown',
-    description: 'Blocky wrestlers, big entrances, dramatic finishers, and turn-based tactical action inside the squared circle.',
-    emoji: '🤼',
-    sideEmoji: '🏆',
-    colors: ['#d45170', '#612c72', '#ffa982'],
-    playable: true,
-    featured: true
+    "id": "microcanyon",
+    "repo": "rcCars",
+    "url": "https://hambonesoftware.github.io/rcCars/canyon-circuit.html",
+    "title": "Micro Mayhem: Canyon Thunder",
+    "category": "Racing",
+    "type": "3D stunt racing",
+    "description": "Race 3D RC trucks through a banked canyon circuit with big jumps, four sectors, and a two-lap finish.",
+    "emoji": "🏜️",
+    "sideEmoji": "🏁",
+    "colors": [
+      "#dd8e54",
+      "#344e65",
+      "#ffd48d"
+    ],
+    "playable": true
   },
   {
-    id: 'football',
-    repo: 'old-school-football',
-    title: 'Old School Football',
-    category: 'Arcade',
-    type: 'Football arcade',
-    description: 'Retro handheld football energy with chibi players, smooth runs, charging defenders, and one more shot at the end zone.',
-    emoji: '🏈',
-    sideEmoji: '⚡',
-    colors: ['#30956b', '#1e4d69', '#c6fb78'],
-    playable: true,
-    featured: true
+    "id": "hopshift",
+    "repo": "hopshift",
+    "url": "https://hambonesoftware.github.io/hopshift/course-concept.html",
+    "title": "HopShift",
+    "category": "Platformer",
+    "type": "Flip-and-slide platformer",
+    "description": "Run and jump as Kip the little cube, flip onto your head, slide beneath machinery, and ride moving platforms.",
+    "emoji": "🟨",
+    "sideEmoji": "🤸",
+    "colors": [
+      "#b268dc",
+      "#3f4da8",
+      "#ffd66c"
+    ],
+    "playable": true,
+    "featured": true
   },
   {
-    id: 'apeironx',
-    repo: 'apeironX',
-    title: 'Apeiron X',
-    category: 'Arcade',
-    type: 'Retro action',
-    description: 'An original browser tribute to classic centipede-style arcade chaos, with animated critters and neon-fast action.',
-    emoji: '🐛',
-    sideEmoji: '💥',
-    colors: ['#3aaf81', '#142e61', '#92f5cb'],
-    playable: true
+    "id": "marblemerge",
+    "repo": "marbleMerge",
+    "url": "https://hambonesoftware.github.io/marbleMerge/v2/",
+    "title": "Marble Merge Grand Prix",
+    "category": "Racing",
+    "type": "3D physics marble racing",
+    "description": "Follow colorful marbles through a huge wooden downhill course with funnels, drops, and moving obstacles.",
+    "emoji": "🔮",
+    "sideEmoji": "🏁",
+    "colors": [
+      "#3b92b4",
+      "#292d72",
+      "#8fddff"
+    ],
+    "playable": true,
+    "featured": true
   },
   {
-    id: 'stony',
-    repo: 'sunward',
-    title: 'Stony Creek Explorer',
-    category: 'Worlds',
-    type: '3D exploration',
-    description: 'Take a quiet digital stroll through a park-inspired Michigan landscape with trails, trees, and places to wander.',
-    emoji: '🌲',
-    sideEmoji: '🧭',
-    colors: ['#4fa676', '#204e77', '#9af0ad'],
-    playable: true
+    "id": "facesandheels",
+    "repo": "faces-and-heels",
+    "title": "Faces & Heels",
+    "category": "Arcade",
+    "type": "Turn-based wrestling",
+    "description": "Choose Stone or Viper, call the moves, roll the dice, escape submissions, and land your signature finisher.",
+    "emoji": "🤼",
+    "sideEmoji": "🏆",
+    "colors": [
+      "#d45170",
+      "#612c72",
+      "#ffa982"
+    ],
+    "playable": true,
+    "featured": true
   },
   {
-    id: 'depthroom',
-    repo: 'depthroom',
-    title: 'DepthRoom',
-    category: 'Creative',
-    type: 'AI photo playground',
-    description: 'Turn a flat photograph into a moving 2.5D scene with depth, camera motion, and interactive parallax.',
-    emoji: '🖼️',
-    sideEmoji: '✨',
-    colors: ['#b965b7', '#343c94', '#ffb7eb'],
-    playable: true
+    "id": "football",
+    "repo": "old-school-football",
+    "title": "Old School Football",
+    "category": "Arcade",
+    "type": "Retro football challenge",
+    "description": "Snap the ball, juke the defense, break tackles, and drive toward the end zone with tiny blocky players.",
+    "emoji": "🏈",
+    "sideEmoji": "⚡",
+    "colors": [
+      "#30956b",
+      "#1e4d69",
+      "#c6fb78"
+    ],
+    "playable": true
   },
   {
-    id: 'mind2',
-    repo: 'MIND2',
-    title: 'MIND2',
-    category: 'Creative',
-    type: 'Music maker',
-    description: 'A browser music laboratory that composes melodies, harmony, bass, and drums and can export MIDI.',
-    emoji: '🎹',
-    sideEmoji: '🎵',
-    colors: ['#9d68df', '#3545a4', '#e4c1ff'],
-    playable: true
+    "id": "apeironx",
+    "repo": "apeironX",
+    "title": "Apeiron X",
+    "category": "Arcade",
+    "type": "Retro creature shooter",
+    "description": "Battle swarms of animated arcade critters in a fast-moving, colorful tribute to classic centipede-style action.",
+    "emoji": "🐛",
+    "sideEmoji": "💥",
+    "colors": [
+      "#3aaf81",
+      "#142e61",
+      "#92f5cb"
+    ],
+    "playable": true
   },
   {
-    id: 'barrack',
-    repo: 'Barrack',
-    title: 'Barrack+',
-    category: 'Workbench',
-    type: 'Area-capture game',
-    description: 'A colorful JezzBall-style area-capture project designed for Swift Playgrounds and its arena challenges.',
-    emoji: '🟦',
-    sideEmoji: '⚡',
-    colors: ['#4a80e6', '#342a79', '#b3dcff'],
-    playable: false
+    "id": "barrack",
+    "repo": "Barrack",
+    "title": "Barrack+",
+    "category": "Arcade",
+    "type": "Area-capture arcade",
+    "description": "Draw walls, claim territory, dodge bouncing enemies, and collect bonuses in this browser-playable JezzBall-style game.",
+    "emoji": "🟦",
+    "sideEmoji": "⚡",
+    "colors": [
+      "#4a80e6",
+      "#342a79",
+      "#b3dcff"
+    ],
+    "playable": true
   },
   {
-    id: 'growavillage',
-    repo: 'GrowAVillage',
-    title: 'Grow a Village',
-    category: 'Workbench',
-    type: 'Game prototype',
-    description: 'A village-themed experiment from the Hambone workshop. Explore its development in GitHub.',
-    emoji: '🏘️',
-    sideEmoji: '🌱',
-    colors: ['#6eb78a', '#4b5477', '#f8e7aa'],
-    playable: false
+    "id": "sprayworks",
+    "repo": "sprayworks",
+    "title": "SprayWorks: Clockwork Crew",
+    "category": "Worlds",
+    "type": "Clockwork puzzle adventure",
+    "description": "Lead a tiny crew, clean scattered gears, carry them across the workbench, and repair a giant mechanical clock.",
+    "emoji": "⚙️",
+    "sideEmoji": "🧑‍🔧",
+    "colors": [
+      "#9a55a8",
+      "#342665",
+      "#ffcb66"
+    ],
+    "playable": true
   },
   {
-    id: 'creaturestudio',
-    repo: 'creaturestudio',
-    title: 'Creature Studio',
-    category: 'Workbench',
-    type: 'Creative prototype',
-    description: 'An experimental project from the creature-making side of the workshop, currently available as source.',
-    emoji: '🦎',
-    sideEmoji: '🧪',
-    colors: ['#a572df', '#475293', '#ddbbff'],
-    playable: false
+    "id": "mechanicalworld",
+    "repo": "mechanicalWorld",
+    "title": "Mechanical World: REDLINE",
+    "category": "Physics",
+    "type": "3D engineering challenge",
+    "description": "Design and load-test beams in a virtual hydraulic laboratory. Find the limit and watch the structure fail.",
+    "emoji": "🔩",
+    "sideEmoji": "⚡",
+    "colors": [
+      "#c58b51",
+      "#3b5e68",
+      "#f8d29b"
+    ],
+    "playable": true
   },
   {
-    id: 'animesh',
-    repo: 'AniMesh',
-    title: 'AniMesh',
-    category: 'Creative',
-    type: 'Image-to-mesh tool',
-    description: 'An image-processing experiment focused on automatically meshing two-dimensional images.',
-    emoji: '🧩',
-    sideEmoji: '📐',
-    colors: ['#e58b84', '#7a4a83', '#ffdfb6'],
-    playable: false
+    "id": "engineeringcareer",
+    "repo": "mechanicalWorld",
+    "url": "https://hambonesoftware.github.io/mechanicalWorld/career.html",
+    "title": "REDLINE: Engineering Career",
+    "category": "Physics",
+    "type": "Engineering career game",
+    "description": "Take work orders and use virtual precision tools to measure 3D parts in an immersive engineering workstation.",
+    "emoji": "📏",
+    "sideEmoji": "🛠️",
+    "colors": [
+      "#4f879d",
+      "#364259",
+      "#b6eadf"
+    ],
+    "playable": true
   },
   {
-    id: 'plantit',
-    repo: 'plantit',
-    title: 'PlantIt',
-    category: 'Creative',
-    type: 'Plant journal',
-    description: 'A leafy plant-tracking companion with rooms, watering history, and a nature-inspired feel.',
-    emoji: '🪴',
-    sideEmoji: '💧',
-    colors: ['#62ad79', '#3b557c', '#c7faa9'],
-    playable: false
-  },
-  {
-    id: 'potion',
-    repo: 'Potion',
-    title: 'Potion',
-    category: 'Workbench',
-    type: 'Workshop project',
-    description: 'A curious project still on the workbench. Look inside the source repository.',
-    emoji: '🧪',
-    sideEmoji: '✨',
-    colors: ['#ac70c7', '#525398', '#f0b7ff'],
-    playable: false
+    "id": "stony",
+    "repo": "sunward",
+    "title": "Stony Creek Explorer",
+    "category": "Worlds",
+    "type": "Open-world park exploration",
+    "description": "Wander a Michigan park-inspired 3D world with trails, lakes, trees, and a first-person walking view.",
+    "emoji": "🌲",
+    "sideEmoji": "🧭",
+    "colors": [
+      "#4fa676",
+      "#204e77",
+      "#9af0ad"
+    ],
+    "playable": true
   }
 ];
 
-const FILTERS = ['All', 'Arcade', 'Physics', 'Worlds', 'Creative', 'Workbench'];
+const FILTERS = ['All', 'Racing', 'Arcade', 'Platformer', 'Strategy', 'Physics', 'Worlds'];
+
 const STORAGE_KEY = 'hambone-arcade-favorites-v1';
 const GITHUB_BASE = 'https://github.com/hambonesoftware/';
 const PAGES_BASE = 'https://hambonesoftware.github.io/';
@@ -259,7 +314,7 @@ function announce(message) {
 
 function projectUrl(project) {
   if (project.url) return project.url;
-  return project.playable ? PAGES_BASE + project.repo + '/' : GITHUB_BASE + project.repo;
+  return PAGES_BASE + project.repo + '/';
 }
 
 function repoUrl(project) {
@@ -323,8 +378,8 @@ function cardElement(project) {
   const type = document.createElement('span');
   type.textContent = project.type;
   const status = document.createElement('span');
-  status.className = 'status' + (project.playable ? '' : ' source');
-  status.textContent = project.playable ? '● Browser' : '◇ Source';
+  status.className = 'status';
+  status.textContent = '● Playable';
   meta.append(type, status);
   const title = document.createElement('h3');
   title.textContent = project.title;
@@ -338,30 +393,20 @@ function cardElement(project) {
   primaryLink.href = projectUrl(project);
   primaryLink.target = '_blank';
   primaryLink.rel = 'noopener noreferrer';
-  primaryLink.textContent = project.playable ? 'Play / Explore' : 'View project';
+  primaryLink.textContent = 'Play now';
   const arrow = document.createElement('span');
   arrow.textContent = '↗';
   arrow.setAttribute('aria-hidden', 'true');
   primaryLink.appendChild(arrow);
   actions.appendChild(primaryLink);
 
-  if (project.playable) {
-    const previewButton = document.createElement('button');
-    previewButton.className = 'preview-btn';
-    previewButton.type = 'button';
-    previewButton.dataset.preview = project.id;
-    previewButton.textContent = 'Preview';
-    previewButton.setAttribute('aria-label', 'Preview ' + project.title);
-    actions.appendChild(previewButton);
-  } else {
-    const sourceLink = document.createElement('a');
-    sourceLink.href = repoUrl(project);
-    sourceLink.target = '_blank';
-    sourceLink.rel = 'noopener noreferrer';
-    sourceLink.className = 'preview-btn';
-    sourceLink.textContent = 'GitHub ↗';
-    actions.appendChild(sourceLink);
-  }
+  const previewButton = document.createElement('button');
+  previewButton.className = 'preview-btn';
+  previewButton.type = 'button';
+  previewButton.dataset.preview = project.id;
+  previewButton.textContent = 'Preview';
+  previewButton.setAttribute('aria-label', 'Preview ' + project.title);
+  actions.appendChild(previewButton);
 
   info.append(meta, title, desc, actions);
   card.append(art, heart, info);
@@ -399,7 +444,7 @@ function toggleFavorite(id) {
 }
 
 function surpriseMe() {
-  const games = PROJECTS.filter(function (project) { return project.playable; });
+  const games = PROJECTS;
   if (!games.length) {
     announce('No browser games are available right now.');
     return;
@@ -417,7 +462,7 @@ function surpriseMe() {
 
 function openPreview(id) {
   const project = findProject(id);
-  if (!project || !project.playable) return;
+  if (!project) return;
   const url = projectUrl(project);
   previewTitle.textContent = project.title;
   previewOpen.href = url;
@@ -458,13 +503,7 @@ document.getElementById('resetFilters').addEventListener('click', function () {
   search.value = '';
   render();
 });
-document.getElementById('seeExperiments').addEventListener('click', function () {
-  activeFilter = 'Creative';
-  favoriteMode = false;
-  search.value = '';
-  render();
-  document.getElementById('games').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-});
+document.getElementById('discoverySurprise').addEventListener('click', surpriseMe);
 document.getElementById('closePreview').addEventListener('click', closePreview);
 previewDialog.addEventListener('close', function () {
   previewFrame.src = 'about:blank';
