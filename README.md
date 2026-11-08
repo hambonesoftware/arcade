@@ -62,3 +62,7 @@ The SimAnt old nest-renderer test was retired because it targeted nest.js, a fil
 - Favorites do not synchronize between devices.
 - Emoji/SVG/CSS card visuals are illustrative, not screenshots of live gameplay.
 - Games that block iframe embedding must be opened in a full browser tab.
+
+## App icon
+
+The selected glossy neon arcade-cabinet icon is installed as the website favicon, 180-pixel Apple touch icon, and 192-/512-pixel PWA manifest icons. The image files are version-controlled directly in this repository. On iOS, open the arcade in Safari, tap Share → Add to Home Screen; if an existing shortcut still shows the previous icon, remove that shortcut and add it again.
