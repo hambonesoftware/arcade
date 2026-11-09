@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 35
     environment:
       name: github-pages
-      url: \${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Check out Hambone Arcade
@@ -41,7 +41,7 @@ jobs:
           set -euo pipefail
           mkdir -p _sources
           for repo in rcCars hopshift marbleMerge faces-and-heels old-school-football apeironX Barrack sprayworks mechanicalWorld sunward; do
-            git clone --quiet --depth 1 --single-branch "https://github.com/hambonesoftware/\${repo}.git" "_sources/\${repo}"
+            git clone --quiet --depth 1 --single-branch "https://github.com/hambonesoftware/${repo}.git" "_sources/${repo}"
           done
           git clone --quiet --depth 1 --single-branch --branch gh-pages \
             https://github.com/hambonesoftware/garage-gauntlet.git _sources/garage-pages
@@ -98,9 +98,9 @@ jobs:
           mkdir -p _sources/sunward/public/data
           for file in stony-creek-dem.json stony-creek-map.json; do
             curl --fail --location --silent --show-error --retry 3 \
-              "https://hambonesoftware.github.io/sunward/data/\${file}" \
-              --output "_sources/sunward/public/data/\${file}"
-            test -s "_sources/sunward/public/data/\${file}"
+              "https://hambonesoftware.github.io/sunward/data/${file}" \
+              --output "_sources/sunward/public/data/${file}"
+            test -s "_sources/sunward/public/data/${file}"
           done
 
       - name: Package game binaries, assets and version manifests
