@@ -244,6 +244,23 @@ def create_catalog() -> None:
         raise RuntimeError("Offline arcade package exceeds the safe GitHub Pages size budget")
 
 
+def add_game_return_navigation() -> None:
+    # All local game routes must offer a way back in iOS standalone mode.
+    # Remove old nested game service worker registrations; Arcade's root SW
+    # remains the one authority for installed game versions.
+    for game, (_, entry) in GAME_ENTRIES.items():
+        entry_file = SITE / entry
+        markup = entry_file.read_text(encoding="utf-8")
+        if game == "colony":
+            markup = re.sub(r"<script>if\\('serviceWorker' in navigator\\)[\\s\\S]*?</script>", "", markup)
+        if 'src="/arcade/offline-return.js"' not in markup:
+            if "</body>" not in markup:
+                raise RuntimeError(f"Game is missing closing body tag: {entry}")
+            markup = markup.replace("</body>", '<script defer src="/arcade/offline-return.js"></script>\n</body>')
+        entry_file.write_text(markup, encoding="utf-8")
+
+
 if __name__ == "__main__":
     prepare()
+    add_game_return_navigation()
     create_catalog()
