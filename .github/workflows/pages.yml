@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    # Rebuild against the latest source game revisions every day.
+    - cron: '19 5 * * *'
 
 permissions:
   contents: read
@@ -114,6 +117,14 @@ jobs:
           python -m json.tool _site/game-packages.json >/dev/null
           du -sh _site
           test "$(python -c 'import json; print(len(json.load(open("_site/game-packages.json"))["games"]))')" = 15
+
+      - name: Install headless Chromium for offline mobile checks
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install chromium --only-shell
+
+      - name: Verify download, open, update and remove in an offline PWA
+        run: node tests/offline-browser.test.mjs
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
