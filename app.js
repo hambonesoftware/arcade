@@ -285,6 +285,30 @@ let activeFilter = 'All';
 let favoriteMode = false;
 let toastTimeout;
 let favorites = loadFavorites();
+let offlineCatalog = null;
+let installedVersions = {};
+let offlineRegistration = null;
+let offlineBusy = new Set();
+let progressByPackage = {};
+let bulkBusy = false;
+
+function packageInfo(project) {
+  if (!offlineCatalog) return null;
+  const game = offlineCatalog.games[project.id];
+  const pkg = game && offlineCatalog.packages[game.package];
+  return game && pkg ? {id:game.package, entry:game.entry, pkg:pkg} : null;
+}
+
+function packageState(info) {
+  if (!info) return 'unknown';
+  const installed = installedVersions[info.id];
+  if (!installed) return 'not-installed';
+  return installed === info.pkg.version ? 'installed' : 'update';
+}
+
+function arcadeUrl(path) {
+  return new URL(path, new URL('./', location.href)).href;
+}
 
 function loadFavorites() {
   try {
@@ -313,6 +337,8 @@ function announce(message) {
 }
 
 function projectUrl(project) {
+  const info = packageInfo(project);
+  if (info) return arcadeUrl(info.entry);
   if (project.url) return project.url;
   return PAGES_BASE + project.repo + '/';
 }
@@ -378,8 +404,15 @@ function cardElement(project) {
   const type = document.createElement('span');
   type.textContent = project.type;
   const status = document.createElement('span');
-  status.className = 'status';
-  status.textContent = '● Playable';
+  const offline = packageInfo(project);
+  const offlineState = packageState(offline);
+  status.className = 'status' + (offlineState === 'installed' ? ' offline-installed' : offlineState === 'update' ? ' offline-outdated' : '');
+  const progress = offline && progressByPackage[offline.id];
+  status.textContent = progress !== undefined ? '↓ ' + progress + '% downloaded'
+    : offlineState === 'installed' ? '✓ Offline ready'
+    : offlineState === 'update' ? '↻ Update available'
+    : offlineState === 'not-installed' ? '● Online only'
+    : '● Browser';
   meta.append(type, status);
   const title = document.createElement('h3');
   title.textContent = project.title;
@@ -391,9 +424,9 @@ function cardElement(project) {
   const primaryLink = document.createElement('a');
   primaryLink.className = 'card-link';
   primaryLink.href = projectUrl(project);
-  primaryLink.target = '_blank';
-  primaryLink.rel = 'noopener noreferrer';
-  primaryLink.textContent = 'Play now';
+  primaryLink.target = offline ? '_self' : '_blank';
+  primaryLink.rel = offline ? '' : 'noopener noreferrer';
+  primaryLink.textContent = offline ? 'Open' : 'Play now';
   const arrow = document.createElement('span');
   arrow.textContent = '↗';
   arrow.setAttribute('aria-hidden', 'true');
@@ -407,6 +440,31 @@ function cardElement(project) {
   previewButton.textContent = 'Preview';
   previewButton.setAttribute('aria-label', 'Preview ' + project.title);
   actions.appendChild(previewButton);
+
+  if (offline) {
+    const installButton = document.createElement('button');
+    installButton.type = 'button';
+    installButton.className = 'offline-install';
+    installButton.dataset.install = offline.id;
+    installButton.disabled = offlineBusy.has(offline.id) || bulkBusy;
+    installButton.textContent = offlineBusy.has(offline.id) ? 'Downloading…'
+      : offlineState === 'update' ? 'Update'
+      : offlineState === 'installed' ? 'Installed ✓' : '↓ Download';
+    if (offlineState === 'installed') installButton.disabled = true;
+    actions.appendChild(installButton);
+
+    if (offlineState === 'installed' || offlineState === 'update') {
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'offline-remove';
+      removeButton.dataset.remove = offline.id;
+      removeButton.textContent = 'Remove';
+      removeButton.disabled = offlineBusy.has(offline.id) || bulkBusy;
+      removeButton.setAttribute('aria-label', 'Remove offline files for ' + project.title);
+      actions.appendChild(removeButton);
+    }
+    card.dataset.package = offline.id;
+  }
 
   info.append(meta, title, desc, actions);
   card.append(art, heart, info);
@@ -450,14 +508,7 @@ function surpriseMe() {
     return;
   }
   const project = games[Math.floor(Math.random() * games.length)];
-  const link = document.createElement('a');
-  link.href = projectUrl(project);
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  announce('Your mystery destination: ' + project.title + '!');
+  location.assign(projectUrl(project));
 }
 
 function openPreview(id) {
@@ -481,6 +532,16 @@ function closePreview() {
 }
 
 grid.addEventListener('click', function (event) {
+  const install = event.target.closest('[data-install]');
+  if (install) {
+    installPackage(install.dataset.install);
+    return;
+  }
+  const remove = event.target.closest('[data-remove]');
+  if (remove) {
+    removeInstalledPackage(remove.dataset.remove);
+    return;
+  }
   const favorite = event.target.closest('[data-favorite]');
   if (favorite) {
     toggleFavorite(favorite.dataset.favorite);
@@ -518,5 +579,177 @@ document.addEventListener('keydown', function (event) {
     search.focus();
   }
 });
+
+function workerMessage(request, onProgress) {
+  const worker = navigator.serviceWorker.controller ||
+    (offlineRegistration && offlineRegistration.active);
+  if (!worker) return Promise.reject(new Error('Offline manager is still starting'));
+  return new Promise(function (resolve, reject) {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = function (event) {
+      const msg = event.data || {};
+      if (msg.type === 'PROGRESS') {
+        if (onProgress) onProgress(msg);
+        return;
+      }
+      channel.port1.close();
+      if (msg.type === 'ERROR') reject(new Error(msg.message || 'Download failed'));
+      else resolve(msg);
+    };
+    worker.postMessage(request, [channel.port2]);
+  });
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return 'Size unavailable';
+  if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+  return Math.max(1, Math.round(bytes / 1024)) + ' KB';
+}
+
+function summarizeOffline() {
+  const summary = document.getElementById('offlineSummary');
+  const allButton = document.getElementById('downloadAll');
+  const updateButton = document.getElementById('updateAll');
+  if (!summary || !allButton || !updateButton) return;
+  if (!offlineCatalog) {
+    summary.textContent = 'Preparing offline downloads…';
+    allButton.disabled = true;
+    updateButton.disabled = true;
+    return;
+  }
+  const packages = Object.entries(offlineCatalog.packages);
+  const installed = packages.filter(function (entry) {
+    return Boolean(installedVersions[entry[0]]);
+  });
+  const outdated = packages.filter(function (entry) {
+    return installedVersions[entry[0]] &&
+      installedVersions[entry[0]] !== entry[1].version;
+  });
+  summary.textContent = installed.length + ' of ' + packages.length +
+    ' game packs downloaded · ' + formatBytes(packages.reduce(function (sum, entry) {
+      return sum + (entry[1].bytes || 0);
+    }, 0)) + ' total' +
+    (outdated.length ? ' · ' + outdated.length + ' updates available' : '');
+  allButton.disabled = bulkBusy || installed.length === packages.length;
+  updateButton.disabled = bulkBusy || outdated.length === 0;
+  allButton.textContent = bulkBusy ? 'Downloading…' : '↓ Download all';
+  updateButton.textContent = '↻ Update all' + (outdated.length ? ' (' + outdated.length + ')' : '');
+}
+
+function refreshOfflineProgress(id, percent) {
+  progressByPackage[id] = percent;
+  const cards = grid.querySelectorAll('[data-package]');
+  cards.forEach(function (card) {
+    if (card.dataset.package !== id) return;
+    const state = card.querySelector('.status');
+    if (state) state.textContent = '↓ ' + percent + '% downloaded';
+  });
+}
+
+async function installPackage(id, silent) {
+  if (!offlineCatalog || !offlineCatalog.packages[id] || offlineBusy.has(id)) return false;
+  offlineBusy.add(id);
+  delete progressByPackage[id];
+  render();
+  try {
+    const result = await workerMessage({type:'DOWNLOAD', id:id}, function (event) {
+      const percent = Math.round(event.completed / Math.max(1, event.total) * 100);
+      if (percent !== progressByPackage[id]) refreshOfflineProgress(id, percent);
+    });
+    installedVersions[id] = result.version;
+    if (!silent) announce('Game installed for offline play.');
+    return true;
+  } catch (error) {
+    if (!silent) announce('Download failed: ' + error.message);
+    return false;
+  } finally {
+    offlineBusy.delete(id);
+    delete progressByPackage[id];
+    render();
+    summarizeOffline();
+  }
+}
+
+async function removeInstalledPackage(id) {
+  if (!offlineCatalog || offlineBusy.has(id) || bulkBusy) return;
+  offlineBusy.add(id);
+  render();
+  try {
+    await workerMessage({type:'REMOVE', id:id});
+    delete installedVersions[id];
+    announce('Offline game files removed. Online play remains available.');
+  } catch (error) {
+    announce('Could not remove the package: ' + error.message);
+  } finally {
+    offlineBusy.delete(id);
+    render();
+    summarizeOffline();
+  }
+}
+
+async function bulkDownload(mode) {
+  if (!offlineCatalog || bulkBusy) return;
+  bulkBusy = true;
+  summarizeOffline();
+  const targets = Object.entries(offlineCatalog.packages).filter(function (entry) {
+    const version = installedVersions[entry[0]];
+    return mode === 'updates' ? (version && version !== entry[1].version) : !version;
+  });
+  let completed = 0;
+  for (const entry of targets) {
+    const successful = await installPackage(entry[0], true);
+    if (successful) completed++;
+  }
+  bulkBusy = false;
+  summarizeOffline();
+  render();
+  announce(completed + ' of ' + targets.length +
+    ' game packages ' + (mode === 'updates' ? 'updated.' : 'downloaded.'));
+}
+
+async function refreshCatalog() {
+  if (!offlineRegistration) return;
+  try {
+    const result = await workerMessage({type:'STATUS'});
+    offlineCatalog = result.catalog;
+    installedVersions = result.installed;
+    render();
+    summarizeOffline();
+  } catch (error) {
+    announce('Offline library unavailable: ' + error.message);
+  }
+}
+
+async function initializeOffline() {
+  summarizeOffline();
+  if (!('serviceWorker' in navigator) || !window.isSecureContext) {
+    const summary = document.getElementById('offlineSummary');
+    if (summary) summary.textContent = 'Offline downloads require a secure browser and service workers.';
+    return;
+  }
+  try {
+    offlineRegistration = await navigator.serviceWorker.register('./sw.js', {
+      scope:'./', updateViaCache:'none'
+    });
+    await navigator.serviceWorker.ready;
+    await refreshCatalog();
+  } catch (error) {
+    const summary = document.getElementById('offlineSummary');
+    if (summary) summary.textContent = 'Offline library unavailable: ' + error.message;
+  }
+}
+
+document.getElementById('downloadAll').addEventListener('click', function () {
+  bulkDownload('missing');
+});
+document.getElementById('updateAll').addEventListener('click', function () {
+  bulkDownload('updates');
+});
+document.getElementById('checkUpdates').addEventListener('click', function () {
+  refreshCatalog().then(function () { announce('Game versions checked.'); });
+});
+window.addEventListener('online', refreshCatalog);
+
 document.getElementById('year').textContent = new Date().getFullYear();
 render();
+initializeOffline();
