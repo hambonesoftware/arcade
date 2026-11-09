@@ -109,6 +109,21 @@
           <button id="favoritesOnly" class="favorites-filter" type="button" aria-pressed="false" title="Show favorites"><span aria-hidden="true">♡</span> <span class="favorites-label">Favorites</span></button>
         </div>
       </div>
+      <section class="offline-manager" aria-labelledby="offlineTitle">
+        <div class="offline-manager-copy">
+          <span class="offline-symbol" aria-hidden="true">↓</span>
+          <div>
+            <h3 id="offlineTitle">Your pocket arcade</h3>
+            <p id="offlineSummary" role="status" aria-live="polite">Preparing offline downloads…</p>
+            <small>Download once, then play without internet. Games remain separate from your saved progress.</small>
+          </div>
+        </div>
+        <div class="offline-manager-buttons">
+          <button type="button" id="downloadAll" class="offline-bulk offline-bulk-primary" disabled>↓ Download all</button>
+          <button type="button" id="updateAll" class="offline-bulk" disabled>↻ Update all</button>
+          <button type="button" id="checkUpdates" class="offline-refresh">Check updates</button>
+        </div>
+      </section>
       <div class="project-grid" id="projectGrid" aria-live="polite"></div>
       <div class="empty-state" id="emptyState" hidden><span aria-hidden="true">🪐</span><h3>Nothing in this orbit.</h3><p>Try another search or clear the filters.</p><button type="button" class="button button-ghost" id="resetFilters">Show everything</button></div>
     </section>
