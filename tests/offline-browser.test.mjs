@@ -99,7 +99,28 @@ try {
     (await caches.keys()).filter(name => name.startsWith('hambone-game-v1-colony-')));
   assert.equal(removed.length, 0, 'Removing a package only deletes its offline assets');
   assert.equal(await page.evaluate(() => localStorage.getItem('hb-test-progress')), 'keep-saves');
-  console.log('PASS: 15 entries, real download, offline game launch, shell reload, update and removal without losing local data');
+  // Validate the complete collection, not only the smallest sample game.
+  forcedCatalog = null;
+  await page.locator('#checkUpdates').click();
+  await page.locator('#downloadAll').click();
+  await page.waitForFunction(() => document.getElementById('offlineSummary')?.textContent.includes('12 of 12 game packs downloaded'), {timeout:120000});
+  const offlineCaches = await page.evaluate(async () =>
+    (await caches.keys()).filter(name => name.startsWith('hambone-game-v1-')));
+  assert.equal(offlineCaches.length, 12, 'All 12 game packages should be installed');
+
+  await context.setOffline(true);
+  for (const game of Object.values(rawCatalog.games)) {
+    const response = await page.goto(base + game.entry, {waitUntil:'domcontentloaded',timeout:30000});
+    assert.equal(response.status(), 200, 'Installed game should navigate offline: ' + game.entry);
+    await page.waitForSelector('#hamboneReturn', {timeout:10000});
+    const failurePage = await page.locator('h1').filter({hasText:'Download this game first'}).count();
+    assert.equal(failurePage, 0, 'Game was not served from cache: ' + game.entry);
+    console.log('Offline open:', game.entry);
+  }
+  await page.goto(base, {waitUntil:'domcontentloaded'});
+  assert.equal(await page.locator('.project-card').count(), 15);
+  assert.equal(await page.evaluate(() => localStorage.getItem('hb-test-progress')), 'keep-saves');
+  console.log('PASS: all 15 game routes open offline from 12 downloaded packs; updates/removal preserve local data');
 } finally {
   await browser.close();
   await new Promise(done => server.close(done));
