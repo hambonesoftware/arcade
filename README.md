@@ -28,6 +28,29 @@ The three Micro Mayhem/Maple Junction entries launch distinct playable courses w
 
 Garage Gauntlet is a Unity WebGL export from the garage-gauntlet repository's gh-pages branch, not from its main source branch. Barrack's GitHub Pages workflow publishes the web/ subfolder at the site root. The featured Marble Merge card opens the newer v2 build rather than the older root version.
 
+## Downloadable offline PWA game library
+
+All 15 playable launch entries are built under the Arcade's own `/arcade/games/` path (or `/arcade/simant/` for Colony). They share **12 actual downloaded packages**. The three `rcCars` racing titles share one asset pack, and the two REDLINE modes share one. This avoids duplicate data and ensures games remain controlled by the Arcade service worker.
+
+A separate generated `game-packages.json` contains every static file and a content-derived package version. The service worker `sw.js` provides:
+
+- **Download**: fetch every file for that game package, including its HTML, code, models, textures and compressed Unity assets. The package is marked installed only when all transfers succeed.
+- **Open**: use a same-origin local game route. Downloaded games load from Cache Storage even with Airplane Mode enabled; undownloaded games can still open online.
+- **Update**: compare the installed version to the published hash. Download the replacement in a new cache, then delete the old cache *only after the new package has completed*. Game save data is not deleted.
+- **Remove**: free cached game files without touching localStorage or IndexedDB.
+- **Download all / Update all**: process each unique package only once, with progress shown on the cards.
+- **Check updates**: request the newest published package catalog; the catalog is also checked when the app starts and reconnects to the internet.
+
+The GitHub Pages build checks out every game repository, packages its working web build, includes its self-hosted library dependencies, publishes the entire collection as one same-origin Pages site, and executes a mobile-size Chromium offline install/update/remove regression test. The workflow also runs automatically once per day in UTC, so changes to games in other repositories appear as available updates after the next successful Arcade rebuild (or a manual workflow dispatch). A source repo update does not immediately change existing offline files.
+
+**Important:** Browser-managed PWA storage is not an OS-level permanent installation. iOS can evict offline caches under storage pressure. The UI must allow re-downloading a package if it is evicted. If the collection has a temporary build or CDN failure, GitHub keeps the previous successful Pages deployment.
+
+### Offline development and validation
+
+`scripts/package_offline_games.py` collects the actual built files into `_site` and generates `_site/game-packages.json`. It is executed only after the workflow prepares Unity WebGL, locally hosted JS libraries, the physics WASM, REDLINE's Vite bundle, and Stony Creek geography files.
+
+`tests/offline-browser.test.mjs` runs against the `_site` build on localhost with a mobile-sized Chromium viewport. It verifies real package caching, opening Colony offline, reloading the launcher offline, detecting a newer version, updating atomically, removing cached files and retaining local data.
+
 ## Website features
 
 - Responsive custom-illustrated homepage built with plain HTML, CSS, and JavaScript.
