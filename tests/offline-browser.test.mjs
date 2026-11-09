@@ -103,7 +103,7 @@ try {
   forcedCatalog = null;
   await page.locator('#checkUpdates').click();
   await page.locator('#downloadAll').click();
-  await page.waitForFunction(() => document.getElementById('offlineSummary')?.textContent.includes('12 of 12 game packs downloaded'), {timeout:120000});
+  await page.waitForFunction(() => document.getElementById('offlineSummary')?.textContent.includes('12 of 12 game packs downloaded'), null, {timeout:120000});
   const offlineCaches = await page.evaluate(async () =>
     (await caches.keys()).filter(name => name.startsWith('hambone-game-v1-')));
   assert.equal(offlineCaches.length, 12, 'All 12 game packages should be installed');
