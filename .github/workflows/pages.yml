@@ -1,4 +1,4 @@
-name: Deploy Hambone Arcade
+name: Deploy Hambone Arcade offline collection
 
 on:
   push:
@@ -16,26 +16,113 @@ concurrency:
 
 jobs:
   deploy:
-    name: Publish static site
+    name: Build and publish all playable game packages
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: \${{ steps.deployment.outputs.page_url }}
+
     steps:
-      - name: Checkout repository
+      - name: Check out Hambone Arcade
         uses: actions/checkout@v4
-      - name: Configure Node for HUD core tests
+
+      - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Test Hambone PLAY
+
+      - name: Test the Arcade shell and current game logic
         run: npm test
-      - name: Configure GitHub Pages
+
+      - name: Fetch versioned public game sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _sources
+          for repo in rcCars hopshift marbleMerge faces-and-heels old-school-football apeironX Barrack sprayworks mechanicalWorld sunward; do
+            git clone --quiet --depth 1 --single-branch "https://github.com/hambonesoftware/\${repo}.git" "_sources/\${repo}"
+          done
+          git clone --quiet --depth 1 --single-branch --branch gh-pages \
+            https://github.com/hambonesoftware/garage-gauntlet.git _sources/garage-pages
+          test -s _sources/garage-pages/index.html
+
+      - name: Bundle RC racing engines for genuine offline play
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _sources/rcCars/vendor
+          curl --fail --location --silent --show-error --retry 3 \
+            'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js' \
+            --output _sources/rcCars/vendor/three-0.164.1.module.js
+          curl --fail --location --silent --show-error --retry 3 \
+            'https://cdn.jsdelivr.net/npm/playcanvas@2.23.3/+esm' \
+            --output _sources/rcCars/vendor/playcanvas.mjs
+          test -s _sources/rcCars/vendor/three-0.164.1.module.js
+          test -s _sources/rcCars/vendor/playcanvas.mjs
+
+      - name: Build Marble Merge's bundled physics engine
+        working-directory: _sources/marbleMerge
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          npx --yes esbuild@0.25.12 v2/main.js --bundle --format=esm \
+            --platform=browser --alias:rapier=@dimforge/rapier3d-compat \
+            --loader:.wasm=binary --outfile=v2/offline-main.js
+          test -s v2/offline-main.js
+
+      - name: Build SprayWorks' playable factory bundle
+        working-directory: _sources/sprayworks
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          test -s public/index.html
+          test -s public/factory.bundle.js
+
+      - name: Build REDLINE with its actual Arcade game route
+        working-directory: _sources/mechanicalWorld
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          bash scripts/fetch-caliper.sh
+          npm run build -- --base=/arcade/games/mechanicalWorld/
+          test -s dist/index.html
+          test -s dist/career.html
+
+      - name: Include Stony Creek's published geographic data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _sources/sunward/public/data
+          for file in stony-creek-dem.json stony-creek-map.json; do
+            curl --fail --location --silent --show-error --retry 3 \
+              "https://hambonesoftware.github.io/sunward/data/\${file}" \
+              --output "_sources/sunward/public/data/\${file}"
+            test -s "_sources/sunward/public/data/\${file}"
+          done
+
+      - name: Package game binaries, assets and version manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/package_offline_games.py
+          node --check _site/app.js
+          node --check _site/sw.js
+          node --check _site/offline-return.js
+          python -m json.tool _site/game-packages.json >/dev/null
+          du -sh _site
+          test "$(python -c 'import json; print(len(json.load(open("_site/game-packages.json"))["games"]))')" = 15
+
+      - name: Configure Pages
         uses: actions/configure-pages@v5
-      - name: Upload static site
+
+      - name: Upload complete, same-origin Arcade
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
-      - name: Deploy to GitHub Pages
+          path: _site
+
+      - name: Publish PWA and playable offline game packages
         id: deployment
         uses: actions/deploy-pages@v4
