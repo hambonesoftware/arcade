@@ -150,7 +150,33 @@ function ideaCard(idea) {
     }
   });
   bottom.append(button, count);
-  card.append(meta, title, desc, bottom);
+  const report = element('details', undefined, 'report-control');
+  report.append(element('summary', 'Report this suggestion'));
+  const reportRow = element('div', undefined, 'report-row');
+  const select = element('select');
+  select.setAttribute('aria-label', 'Reason for report');
+  for (const [value, label] of [['spam', 'Spam'], ['inappropriate', 'Inappropriate content'], ['off-topic', 'Off-topic']]) {
+    const option = element('option', label);
+    option.value = value;
+    select.append(option);
+  }
+  const reportButton = element('button', 'Send report');
+  reportButton.type = 'button';
+  reportButton.addEventListener('click', async () => {
+    reportButton.disabled = true;
+    try {
+      await write('ideas/' + idea.id + '/report', { reason: select.value });
+      announce('ideaMessage', 'Report received. A moderator will review it.');
+      report.open = false;
+    } catch (error) {
+      announce('ideaMessage', error.message);
+    } finally {
+      reportButton.disabled = false;
+    }
+  });
+  reportRow.append(select, reportButton);
+  report.append(reportRow);
+  card.append(meta, title, desc, bottom, report);
   return card;
 }
 async function loadIdeas() {
