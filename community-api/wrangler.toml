@@ -1,0 +1,20 @@
+name = "hambone-arcade-community"
+main = "src/worker.js"
+compatibility_date = "2026-11-01"
+
+# Set the D1 database ID returned by: npx wrangler d1 create hambone-community
+[[d1_databases]]
+binding = "DB"
+database_name = "hambone-community"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+ALLOWED_ORIGIN = "https://hambonesoftware.github.io"
+TURNSTILE_HOSTNAME = "hambonesoftware.github.io"
+TURNSTILE_SITE_KEY = ""
+ADMIN_EMAIL = ""
+
+# Add secrets with wrangler secret put:
+# TURNSTILE_SECRET  (Cloudflare Turnstile secret)
+# RATE_SALT         (random high-entropy value used only for short-lived abuse hashing)
+# Never commit credentials.
