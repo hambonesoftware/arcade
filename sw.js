@@ -2,14 +2,16 @@
 'use strict';
 
 const SCOPE = self.registration.scope;
-const SHELL_CACHE = 'hambone-shell-v3';
+const SHELL_CACHE = 'hambone-shell-v4';
 const GAME_PREFIX = 'hambone-game-v1-';
 const INDEX_URL = new URL('game-packages.json', SCOPE).href;
 const CORE_FILES = [
   './', './index.html', './app.js', './styles.css',
   './manifest.webmanifest', './favicon.png', './apple-touch-icon.png',
   './icons/icon-192.png', './icons/icon-512.png',
-  './offline-return.js'
+  './offline-return.js',
+  './community/', './community/index.html', './community/app.js',
+  './community/styles.css', './community/config.js'
 ];
 
 self.addEventListener('install', event => {
