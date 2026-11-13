@@ -56,6 +56,7 @@ not replace authentication or rate limiting. GitHub Pages still hosts all games.
 - GET /api/roadmap
 - POST /api/ideas: title, description, genre, nickname, turnstileToken
 - POST /api/ideas/:id/support: support (boolean), turnstileToken
+- POST /api/ideas/:id/report: reason (spam / inappropriate / off-topic), turnstileToken
 - POST /api/polls/:id/vote: optionId, turnstileToken
 
 The client sends an optional X-Guest-Token header for anonymous identity. A
@@ -71,11 +72,14 @@ Cloudflare Access with the exact owner email is required on these routes:
 - GET /admin
 - GET /api/admin/overview
 - POST /api/admin/ideas/:id/status
+- POST /api/admin/reports/:id/dismiss
 - POST /api/admin/polls
 - POST /api/admin/polls/:id/close
 - POST /api/admin/roadmap
 
 All new suggestions enter pending and are hidden until moderator approval.
+Visitors may file one report per idea/identity. Moderators can dismiss reports
+or archive the affected idea from the dashboard.
 Duplicate suggestions can be rejected in favor of the original idea; automated
 vote merging is deliberately not included in version one.
 Official polls contain 2–5 approved ideas and may not overlap. Polls last no
