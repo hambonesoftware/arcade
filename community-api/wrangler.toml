@@ -14,6 +14,9 @@ TURNSTILE_HOSTNAME = "hambonesoftware.github.io"
 TURNSTILE_SITE_KEY = ""
 ADMIN_EMAIL = ""
 
+[triggers]
+crons = ["30 5 * * *"]
+
 # Add secrets with wrangler secret put:
 # TURNSTILE_SECRET  (Cloudflare Turnstile secret)
 # RATE_SALT         (random high-entropy value used only for short-lived abuse hashing)
