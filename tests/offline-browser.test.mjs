@@ -114,7 +114,9 @@ try {
   for (const game of Object.values(rawCatalog.games)) {
     const response = await page.goto(base + game.entry, {waitUntil:'domcontentloaded',timeout:30000});
     assert.equal(response.status(), 200, 'Installed game should navigate offline: ' + game.entry);
-    await page.waitForSelector('#hamboneReturn', {timeout:10000});
+    // Maple Junction builds its whole town on the main thread (~11 s on CI's software
+    // renderer), so the page can't answer the selector check until that finishes.
+    await page.waitForSelector('#hamboneReturn', {state:'attached', timeout:45000});
     const failurePage = await page.locator('h1').filter({hasText:'Download this game first'}).count();
     assert.equal(failurePage, 0, 'Game was not served from cache: ' + game.entry);
     console.log('Offline open:', game.entry);
