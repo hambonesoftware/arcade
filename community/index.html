@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="Suggest games, vote on Hambone Arcade's next project, and follow games in development. No account needed.">
+  <title>Community — Hambone Arcade</title>
+  <link rel="icon" href="../favicon.png">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js" defer></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to community content</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="../" aria-label="Hambone Arcade home">
+        <span class="brand-mark" aria-hidden="true">★</span>
+        <span class="brand-wordmark"><strong>HAMBONE</strong><small>ARCADE <span class="brand-spark">✳</span></small></span>
+      </a>
+      <nav class="site-nav" aria-label="Community navigation">
+        <a href="../#games">Play games</a>
+        <a href="./" aria-current="page">Community</a>
+        <a href="#workshop">Workshop</a>
+      </nav>
+      <a class="button button-ghost return-link" href="../#games">← Back to games</a>
+    </div>
+  </header>
+  <main id="main">
+    <section class="shell community-hero">
+      <p class="section-kicker">YOU PICK THE NEXT PIXELS</p>
+      <h1>Your idea.<br><em>Our next obsession.</em></h1>
+      <p>Got a game we should make? Throw it into the ring, back your favorites, and vote for the next project. No login, no passwords — just games.</p>
+      <div class="community-actions">
+        <button id="suggestOpen" class="button button-primary" type="button" disabled>✦ Suggest a game</button>
+        <a class="button button-ghost" href="#officialPoll">See the latest vote ↓</a>
+      </div>
+      <p class="community-status" id="connectionStatus" role="status" aria-live="polite">Connecting to the community board…</p>
+    </section>
+
+    <div class="shell community-layout">
+      <section class="panel poll-panel" id="officialPoll" aria-labelledby="pollTitle">
+        <p class="section-kicker">01 / COMMUNITY SHOWDOWN</p>
+        <h2 id="pollTitle">What should we make <em>next?</em></h2>
+        <p id="pollIntro" class="muted">Loading the latest official poll…</p>
+        <div id="pollOptions" class="poll-options"></div>
+        <div id="verificationPanel" class="verification-panel" hidden>
+          <h3>Quick human check</h3>
+          <p class="muted">One check lets you submit a suggestion, support an idea, or vote. You will never need an account.</p>
+          <div id="turnstileBox" aria-label="Human verification"></div>
+        </div>
+        <p id="voteMessage" class="feedback" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="panel ideas-panel" id="ideas" aria-labelledby="ideasTitle">
+        <div class="section-line">
+          <div><p class="section-kicker">02 / THE IDEA BOARD</p><h2 id="ideasTitle">Big ideas. <em>Little buttons.</em></h2></div>
+          <label class="sort-control">Sort by <select id="ideaSort" aria-label="Sort ideas">
+            <option value="popular">Most supported</option><option value="new">Newest</option>
+          </select></label>
+        </div>
+        <p class="muted">Suggestions appear after a quick moderator review. Upvotes help ideas get noticed; official polls decide the winner.</p>
+        <div id="ideaList" class="idea-list" aria-live="polite"></div>
+        <p id="ideaMessage" class="feedback" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <section class="shell workshop-section" id="workshop" aria-labelledby="workshopTitle">
+      <p class="section-kicker">03 / THE WORKSHOP</p>
+      <h2 id="workshopTitle">From wild idea to <em>playable thing.</em></h2>
+      <p class="muted">Follow the projects the community helped choose — planned, building, playtesting, and released.</p>
+      <div id="roadmapList" class="roadmap-list"></div>
+    </section>
+    <section class="shell community-guidelines">
+      <h2>House rules</h2>
+      <p>Suggest games, not personal information. No spam, hate, harassment, or copyrighted assets/uploads. We review ideas before posting, may combine duplicates, and choose a shortlist of projects we can realistically build. One vote per anonymous browser identity is enforced, but account-free voting cannot guarantee one vote per person.</p>
+      <p>Participation requires an internet connection. The arcade's downloaded games still work offline.</p>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="shell footer-inner"><div><strong>HAMBONE ARCADE ✳</strong><p>Stay curious. Play often.</p></div><div class="footer-links"><a href="../">Arcade</a><a href="https://github.com/hambonesoftware/arcade">GitHub</a></div></div></footer>
+
+  <dialog id="suggestDialog" class="suggest-dialog" aria-labelledby="suggestTitle">
+    <form id="suggestForm">
+      <div class="dialog-head"><div><p class="section-kicker">YOUR NEXT BIG IDEA</p><h2 id="suggestTitle">Suggest a game</h2></div><button type="button" id="suggestClose" aria-label="Close form">✕</button></div>
+      <p class="muted">No account needed. Suggestions are reviewed before appearing publicly.</p>
+      <label>Game name <input name="title" maxlength="80" minlength="3" placeholder="Something wonderfully weird" required></label>
+      <label>Genre <select name="genre" required><option>Arcade</option><option>Racing</option><option>Strategy</option><option>Platformer</option><option>Simulation</option><option>Physics</option><option>Worlds</option><option>Other</option></select></label>
+      <label>Describe the gameplay <textarea name="description" minlength="15" maxlength="800" rows="5" placeholder="How do you play? What's the fun part?" required></textarea></label>
+      <label>Nickname (optional) <input name="nickname" maxlength="32" placeholder="Anonymous"></label>
+      <p id="formFeedback" class="feedback" role="status" aria-live="polite"></p>
+      <div class="dialog-actions"><button class="button button-primary" type="submit">Send for review</button><button class="button button-ghost" type="button" id="suggestCancel">Cancel</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
