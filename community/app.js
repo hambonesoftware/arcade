@@ -61,12 +61,16 @@ function humanToken(widgetId) {
   }
   return token;
 }
+let pendingWrite = false;
 async function write(path, body) {
+  if (pendingWrite) throw new Error('Please finish the first action before submitting another.');
   const widgetId = path === 'ideas' ? state.formTurnstileId : state.turnstileId;
   const turnstileToken = humanToken(widgetId);
+  pendingWrite = true;
   try {
     return await api(path, { method: 'POST', body: { ...body, turnstileToken } });
   } finally {
+    pendingWrite = false;
     if (window.turnstile && widgetId !== null) {
       window.turnstile.reset(widgetId);
     }
