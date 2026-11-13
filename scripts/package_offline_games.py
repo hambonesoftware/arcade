@@ -62,22 +62,43 @@ def rewrite_text(path: Path, before: str, after: str) -> None:
     path.write_text(text.replace(before, after), encoding="utf-8")
 
 
-def package_garage() -> None:
-    source = SOURCE / "garage-pages"
-    dest = GAMES / "garage-gauntlet"
+def package_unity(source_name: str, dest_name: str, extras: tuple[str, ...] = ()) -> None:
+    source = SOURCE / source_name
+    dest = GAMES / dest_name
     dest.mkdir(parents=True)
     html = (source / "index.html").read_text(encoding="utf-8")
     (dest / "index.html").write_text(html, encoding="utf-8")
     targets = set(re.findall(r'Build/[A-Za-z0-9_.-]+', html))
     if len(targets) < 4:
-        raise RuntimeError("Garage Gauntlet Unity index did not expose the four build files")
+        raise RuntimeError(f"{dest_name} Unity index did not expose the four build files")
     for item in sorted(targets):
         parent = dest / item
         parent.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source / item, parent)
-    for extra in ["maple-junction-map.svg"]:
+    for extra in extras:
         if (source / extra).is_file():
             shutil.copy2(source / extra, dest / extra)
+
+
+def package_three_game(name: str) -> None:
+    # These games import three.js from a CDN through an import map. The
+    # workflow bundles each one (three included) into offline-main.js, so the
+    # packaged copy swaps the import map and module entry for that bundle.
+    source = SOURCE / name
+    dest = GAMES / name
+    if not (source / "offline-main.js").is_file():
+        raise RuntimeError(f"Bundled {name} browser JS missing")
+    copy_dir(source, dest)
+    for unneeded in ("src", "test"):
+        shutil.rmtree(dest / unneeded, ignore_errors=True)
+    html = dest / "index.html"
+    text = html.read_text(encoding="utf-8")
+    text, maps = re.subn(r'<script\s+type="importmap">[\s\S]*?</script>', "", text)
+    if maps != 1:
+        raise RuntimeError(f"{name} import map unexpectedly changed")
+    if 'src="src/main.js"' not in text:
+        raise RuntimeError(f"{name} entry point unexpectedly changed")
+    html.write_text(text.replace('src="src/main.js"', 'src="offline-main.js"'), encoding="utf-8")
 
 
 def package_marbles() -> None:
@@ -152,7 +173,11 @@ def prepare() -> None:
     for dirname in FRONT_DIRS:
         copy_dir(ROOT / dirname, SITE / dirname, filter_dev=False)
 
-    package_garage()
+    package_unity("garage-pages", "garage-gauntlet", ("maple-junction-map.svg",))
+    package_unity("trash-rac-pages", "trash-rac-unity")
+    package_unity("stony-creek-pages", "stony-creek-unity")
+    package_three_game("trash-panda-heist")
+    package_three_game("willowbend")
     package_rc_cars()
     copy_dir(SOURCE / "hopshift", GAMES / "hopshift")
     package_marbles()
@@ -169,6 +194,10 @@ def prepare() -> None:
 
 SPECS = {
     "garage": ("garage-pages", "games/garage-gauntlet/", "games/garage-gauntlet/index.html"),
+    "trashrac": ("trash-rac-pages", "games/trash-rac-unity/", "games/trash-rac-unity/index.html"),
+    "stonyunity": ("stony-creek-pages", "games/stony-creek-unity/", "games/stony-creek-unity/index.html"),
+    "trashpanda": ("trash-panda-heist", "games/trash-panda-heist/", "games/trash-panda-heist/index.html"),
+    "willowbend": ("willowbend", "games/willowbend/", "games/willowbend/index.html"),
     "rccars": ("rcCars", "games/rcCars/", "games/rcCars/index.html"),
     "hopshift": ("hopshift", "games/hopshift/", "games/hopshift/course-concept.html"),
     "marbles": ("marbleMerge", "games/marbleMerge/", "games/marbleMerge/v2/index.html"),
@@ -183,6 +212,10 @@ SPECS = {
 }
 
 GAME_ENTRIES = {
+    "willowbend": ("willowbend", "games/willowbend/index.html"),
+    "trashpanda": ("trashpanda", "games/trash-panda-heist/index.html"),
+    "trashrac": ("trashrac", "games/trash-rac-unity/index.html"),
+    "stonyunity": ("stonyunity", "games/stony-creek-unity/index.html"),
     "garagegauntlet": ("garage", "games/garage-gauntlet/index.html"),
     "colony": ("colony", "simant/index.html"),
     "maplejunction": ("rccars", "games/rcCars/maple-junction.html"),

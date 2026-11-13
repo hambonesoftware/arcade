@@ -40,6 +40,14 @@ test('garage gauntlet, all three RC courses, colony, and HopShift are available 
   assert.equal(toUrl(projects.find(p => p.id === 'colony')), 'https://hambonesoftware.github.io/arcade/simant/');
 });
 
+test('the newest games are listed with their own Pages sites', () => {
+  for (const [id, repo] of [['willowbend', 'willowbend'], ['trashpanda', 'trash-panda-heist'], ['trashrac', 'trash-rac-unity'], ['stonyunity', 'stony-creek-unity']]) {
+    const project = projects.find(p => p.id === id);
+    assert.ok(project, `Missing ${id}`);
+    assert.equal(toUrl(project), `https://hambonesoftware.github.io/${repo}/`);
+  }
+});
+
 test('game categories are navigable and local colony source exists', () => {
   assert.equal(filters[0], 'All');
   for (const project of projects) assert.ok(filters.includes(project.category), `Unfilterable game ${project.title}`);

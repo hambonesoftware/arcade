@@ -8,6 +8,9 @@ import { chromium } from 'playwright';
 
 const root = resolve('_site');
 const rawCatalog = JSON.parse(await readFile(join(root, 'game-packages.json'), 'utf8'));
+// Several launch entries share one pack (RC racing, REDLINE), so the two counts differ.
+const GAMES = Object.keys(rawCatalog.games).length;
+const PACKS = Object.keys(rawCatalog.packages).length;
 let forcedCatalog = null;
 const types = {
   '.html':'text/html', '.js':'application/javascript', '.mjs':'application/javascript',
@@ -52,10 +55,9 @@ const context = await browser.newContext({viewport:{width:390,height:844},isMobi
 const page = await context.newPage();
 try {
   await page.goto(base, {waitUntil:'domcontentloaded'});
-  await page.waitForFunction(() => document.getElementById('offlineSummary')?.textContent.includes('12 game packs'), {timeout:30000});
+  await page.waitForFunction(text => document.getElementById('offlineSummary')?.textContent.includes(text), PACKS + ' game packs', {timeout:30000});
   const count = await page.locator('.project-card').count();
-  assert.equal(count, 15, 'Expected all 15 playable entries');
-  assert.equal(Object.keys(rawCatalog.packages).length, 12);
+  assert.equal(count, GAMES, `Expected all ${GAMES} playable entries`);
 
   await page.locator('[data-package="colony"] [data-install]').click();
   await page.waitForFunction(() => [...document.querySelectorAll('[data-package="colony"] .status')]
@@ -72,7 +74,7 @@ try {
   await page.waitForFunction(() => Boolean(window.ColonyEngine), {timeout:12000});
   assert.match(await page.title(), /Colony|First Light|SimAnt/i);
   await page.goto(base, {waitUntil:'domcontentloaded'});
-  assert.equal(await page.locator('.project-card').count(), 15);
+  assert.equal(await page.locator('.project-card').count(), GAMES);
   assert.equal(await page.evaluate(() => localStorage.getItem('hb-test-progress')), 'keep-saves');
 
   // Simulate a newly published game revision. The UI must show Update, not
@@ -103,10 +105,10 @@ try {
   forcedCatalog = null;
   await page.locator('#checkUpdates').click();
   await page.locator('#downloadAll').click();
-  await page.waitForFunction(() => document.getElementById('offlineSummary')?.textContent.includes('12 of 12 game packs downloaded'), null, {timeout:120000});
+  await page.waitForFunction(text => document.getElementById('offlineSummary')?.textContent.includes(text), `${PACKS} of ${PACKS} game packs downloaded`, {timeout:240000});
   const offlineCaches = await page.evaluate(async () =>
     (await caches.keys()).filter(name => name.startsWith('hambone-game-v1-')));
-  assert.equal(offlineCaches.length, 12, 'All 12 game packages should be installed');
+  assert.equal(offlineCaches.length, PACKS, `All ${PACKS} game packages should be installed`);
 
   await context.setOffline(true);
   for (const game of Object.values(rawCatalog.games)) {
@@ -118,9 +120,9 @@ try {
     console.log('Offline open:', game.entry);
   }
   await page.goto(base, {waitUntil:'domcontentloaded'});
-  assert.equal(await page.locator('.project-card').count(), 15);
+  assert.equal(await page.locator('.project-card').count(), GAMES);
   assert.equal(await page.evaluate(() => localStorage.getItem('hb-test-progress')), 'keep-saves');
-  console.log('PASS: all 15 game routes open offline from 12 downloaded packs; updates/removal preserve local data');
+  console.log(`PASS: all ${GAMES} game routes open offline from ${PACKS} downloaded packs; updates/removal preserve local data`);
 } finally {
   await browser.close();
   await new Promise(done => server.close(done));

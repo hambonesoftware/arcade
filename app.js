@@ -8,6 +8,72 @@
  */
 const PROJECTS = [
   {
+    "id": "willowbend",
+    "repo": "willowbend",
+    "title": "Willowbend",
+    "category": "Worlds",
+    "type": "Cozy village adventure",
+    "description": "Wander a cel-shaded chibi village, chat with the neighbors, then follow the paths past the farm and creek to the woods, an old watchtower, and Echo Cave.",
+    "emoji": "🏡",
+    "sideEmoji": "🐸",
+    "colors": [
+      "#8ed35f",
+      "#3fa7a0",
+      "#ffe59a"
+    ],
+    "playable": true,
+    "featured": true
+  },
+  {
+    "id": "trashpanda",
+    "repo": "trash-panda-heist",
+    "title": "Trash Panda Heist",
+    "category": "Arcade",
+    "type": "Slingshot maze heist",
+    "description": "Play a raccoon raiding the alley's trash cans Lode Runner-style, then slingshot your haul at the boxes stacked on the dumpster before the night crew spots you. Every meal moves the clock six hours.",
+    "emoji": "🦝",
+    "sideEmoji": "🗑️",
+    "colors": [
+      "#7a4386",
+      "#2a2266",
+      "#ff4f7a"
+    ],
+    "playable": true,
+    "featured": true
+  },
+  {
+    "id": "trashrac",
+    "repo": "trash-rac-unity",
+    "title": "Trash Rac: Back Alley Rumble",
+    "category": "Arcade",
+    "type": "Unity slingshot arcade",
+    "description": "A cel-shaded raccoon, a dumpster, and far too many boxes. Fling trash, topple the stacks, and duck when the store crew comes out back.",
+    "emoji": "🦝",
+    "sideEmoji": "📦",
+    "colors": [
+      "#c27a45",
+      "#2f2a4a",
+      "#ffd27a"
+    ],
+    "playable": true
+  },
+  {
+    "id": "stonyunity",
+    "repo": "stony-creek-unity",
+    "title": "Stony Creek Explorer: Unity",
+    "category": "Worlds",
+    "type": "Unity park exploration",
+    "description": "Walk Stony Creek Metropark on real USGS terrain and OpenStreetMap trails, through 240,000 trees, with a GTA-style radar and map.",
+    "emoji": "🌳",
+    "sideEmoji": "🗺️",
+    "colors": [
+      "#5f9a52",
+      "#26445f",
+      "#cfe8a0"
+    ],
+    "playable": true
+  },
+  {
     "id": "garagegauntlet",
     "repo": "garage-gauntlet",
     "title": "Garage Gauntlet: Railway Rush",

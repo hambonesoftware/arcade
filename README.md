@@ -8,6 +8,10 @@ Only games with published browser entry points are listed. Developer tools, musi
 
 | Game | Direct play URL |
 | --- | --- |
+| Willowbend | https://hambonesoftware.github.io/willowbend/ |
+| Trash Panda Heist | https://hambonesoftware.github.io/trash-panda-heist/ |
+| Trash Rac: Back Alley Rumble | https://hambonesoftware.github.io/trash-rac-unity/ |
+| Stony Creek Explorer: Unity | https://hambonesoftware.github.io/stony-creek-unity/ |
 | Garage Gauntlet: Railway Rush | https://hambonesoftware.github.io/garage-gauntlet/ |
 | Colony: First Light | https://hambonesoftware.github.io/arcade/simant/ |
 | Maple Junction Loop | https://hambonesoftware.github.io/rcCars/maple-junction.html |
@@ -26,11 +30,11 @@ Only games with published browser entry points are listed. Developer tools, musi
 
 The three Micro Mayhem/Maple Junction entries launch distinct playable courses within the same rcCars repository. Likewise, the two REDLINE entries point to separate playable modes in mechanicalWorld.
 
-Garage Gauntlet is a Unity WebGL export from the garage-gauntlet repository's gh-pages branch, not from its main source branch. Barrack's GitHub Pages workflow publishes the web/ subfolder at the site root. The featured Marble Merge card opens the newer v2 build rather than the older root version.
+Garage Gauntlet, Trash Rac and Stony Creek Explorer: Unity are Unity WebGL exports from their repositories' gh-pages branches, not from their main source branches. Trash Panda Heist and Willowbend load three.js from a CDN when played directly; the Arcade build bundles each one (three.js included) into a single offline-main.js. Barrack's GitHub Pages workflow publishes the web/ subfolder at the site root. The featured Marble Merge card opens the newer v2 build rather than the older root version.
 
 ## Downloadable offline PWA game library
 
-All 15 playable launch entries are built under the Arcade's own `/arcade/games/` path (or `/arcade/simant/` for Colony). They share **12 actual downloaded packages**. The three `rcCars` racing titles share one asset pack, and the two REDLINE modes share one. This avoids duplicate data and ensures games remain controlled by the Arcade service worker.
+All 19 playable launch entries are built under the Arcade's own `/arcade/games/` path (or `/arcade/simant/` for Colony). They share **16 actual downloaded packages**. The three `rcCars` racing titles share one asset pack, and the two REDLINE modes share one. This avoids duplicate data and ensures games remain controlled by the Arcade service worker.
 
 A separate generated `game-packages.json` contains every static file and a content-derived package version. The service worker `sw.js` provides:
 

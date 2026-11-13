@@ -43,12 +43,15 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p _sources
-          for repo in rcCars hopshift marbleMerge faces-and-heels old-school-football apeironX Barrack sprayworks mechanicalWorld sunward; do
+          for repo in rcCars hopshift marbleMerge faces-and-heels old-school-football apeironX Barrack sprayworks mechanicalWorld sunward trash-panda-heist willowbend; do
             git clone --quiet --depth 1 --single-branch "https://github.com/hambonesoftware/${repo}.git" "_sources/${repo}"
           done
-          git clone --quiet --depth 1 --single-branch --branch gh-pages \
-            https://github.com/hambonesoftware/garage-gauntlet.git _sources/garage-pages
-          test -s _sources/garage-pages/index.html
+          # Unity WebGL exports live on each repo's gh-pages branch, not main.
+          for pair in garage-gauntlet:garage-pages trash-rac-unity:trash-rac-pages stony-creek-unity:stony-creek-pages; do
+            git clone --quiet --depth 1 --single-branch --branch gh-pages \
+              "https://github.com/hambonesoftware/${pair%%:*}.git" "_sources/${pair##*:}"
+            test -s "_sources/${pair##*:}/index.html"
+          done
 
       - name: Bundle RC racing engines for genuine offline play
         shell: bash
@@ -63,6 +66,17 @@ jobs:
             --output _sources/rcCars/vendor/playcanvas.mjs
           test -s _sources/rcCars/vendor/three-0.164.1.module.js
           test -s _sources/rcCars/vendor/playcanvas.mjs
+
+      - name: Bundle the three.js games with their engine for offline play
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-audit --no-fund three@0.160.0 esbuild@0.25.12
+          for game in trash-panda-heist willowbend; do
+            npx esbuild "_sources/${game}/src/main.js" --bundle --format=esm \
+              --platform=browser --target=es2022 --outfile="_sources/${game}/offline-main.js"
+            test -s "_sources/${game}/offline-main.js"
+          done
 
       - name: Build Marble Merge's bundled physics engine
         working-directory: _sources/marbleMerge
@@ -116,7 +130,7 @@ jobs:
           node --check _site/offline-return.js
           python -m json.tool _site/game-packages.json >/dev/null
           du -sh _site
-          test "$(python -c 'import json; print(len(json.load(open("_site/game-packages.json"))["games"]))')" = 15
+          test "$(python -c 'import json; print(len(json.load(open("_site/game-packages.json"))["games"]))')" = 19
 
       - name: Install headless Chromium for offline mobile checks
         run: |
