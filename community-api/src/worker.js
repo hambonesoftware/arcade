@@ -293,7 +293,7 @@ async function adminOverview(request, env) {
     env.DB.prepare("SELECT id, title, genre FROM ideas WHERE status = 'approved' ORDER BY created_at DESC LIMIT 200").all(),
     env.DB.prepare('SELECT id, title, status, starts_at, ends_at FROM polls ORDER BY created_at DESC LIMIT 30').all(),
     env.DB.prepare('SELECT id, title, summary, status, release_url FROM roadmap ORDER BY updated_at DESC LIMIT 40').all(),
-    env.DB.prepare("SELECT r.idea_id, i.title, COUNT(*) AS reports FROM idea_reports r JOIN ideas i ON i.id = r.idea_id WHERE r.status = 'open' GROUP BY r.idea_id, i.title ORDER BY reports DESC LIMIT 100").all()
+    env.DB.prepare("SELECT r.idea_id, i.title, COUNT(*) AS reports, GROUP_CONCAT(DISTINCT r.reason) AS reasons FROM idea_reports r JOIN ideas i ON i.id = r.idea_id WHERE r.status = 'open' GROUP BY r.idea_id, i.title ORDER BY reports DESC LIMIT 100").all()
   ]);
   return json(request, env, {
     pending: ideas.results || [], approved: approved.results || [],
