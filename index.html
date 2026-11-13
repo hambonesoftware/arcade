@@ -32,6 +32,7 @@
       </a>
       <nav class="site-nav" aria-label="Main navigation">
         <a href="#games">All games</a>
+        <a href="./community/">Community ✦</a>
         <a href="#about">About</a>
       </nav>
       <button class="header-surprise" id="headerSurprise" type="button"><span aria-hidden="true">✦</span> Surprise me <span aria-hidden="true">↗</span></button>
@@ -47,6 +48,7 @@
         <div class="hero-actions">
           <a href="#games" class="button button-primary">Explore the arcade <span aria-hidden="true">↗</span></a>
           <button type="button" class="button button-ghost" id="heroSurprise">✦ &nbsp; Pick for me</button>
+          <a class="button button-ghost" href="./community/">Suggest the next game ↗</a>
         </div>
         <div class="hero-footnote"><span class="tiny-avatars" aria-hidden="true"><i>★</i><i>⚡</i><i>●</i></span> Made to play. Built to tinker. Always evolving.</div>
       </div>
@@ -128,6 +130,8 @@
       <div class="empty-state" id="emptyState" hidden><span aria-hidden="true">🪐</span><h3>Nothing in this orbit.</h3><p>Try another search or clear the filters.</p><button type="button" class="button button-ghost" id="resetFilters">Show everything</button></div>
     </section>
 
+    <section class="shell" aria-labelledby="communityTeaserTitle" style="padding-top:24px;padding-bottom:50px"><div class="offline-manager"><div class="offline-manager-copy"><span class="offline-symbol" aria-hidden="true">✦</span><div><h3 id="communityTeaserTitle">You pick what we build next</h3><p>Suggest a game, back your favorites, and vote — no account required.</p><small>The new Community Hub includes upcoming polls and a development workshop.</small></div></div><a class="button button-primary" href="./community/">Visit community ↗</a></div></section>
+
     <section class="discovery-section shell" id="discovery">
       <div class="discovery-card">
         <div class="discovery-art" aria-hidden="true"><div class="discovery-disc">✦</div><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><span class="discovery-dot one"></span><span class="discovery-dot two"></span></div>
@@ -138,7 +142,7 @@
     <section class="about shell" id="about"><div class="about-icon" aria-hidden="true">☺</div><div><p class="section-kicker">03 / THE STORY</p><h2>Made with curiosity.<br><em>Shared for fun.</em></h2></div><div class="about-copy"><p>Hambone Software is a creative workshop for homegrown browser games, tiny worlds, and weird ideas that become something playable.</p><p>The projects live in their own GitHub repositories, so every game can keep growing while this arcade stays your front door.</p><a href="https://github.com/hambonesoftware" target="_blank" rel="noopener noreferrer">See the workshop on GitHub ↗</a></div></section>
   </main>
 
-  <footer class="site-footer"><div class="shell footer-inner"><div><strong>HAMBONE ARCADE <span>✳</span></strong><p>Stay curious. Play often.</p></div><div class="footer-links"><a href="#top">Back to top ↑</a><a href="https://github.com/hambonesoftware" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div><small>© <span id="year"></span> Hambone Software</small></div></footer>
+  <footer class="site-footer"><div class="shell footer-inner"><div><strong>HAMBONE ARCADE <span>✳</span></strong><p>Stay curious. Play often.</p></div><div class="footer-links"><a href="#top">Back to top ↑</a><a href="./community/">Community</a><a href="https://github.com/hambonesoftware" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div><small>© <span id="year"></span> Hambone Software</small></div></footer>
   <dialog id="previewDialog" class="preview-dialog" aria-label="Game preview"><div class="preview-bar"><div><span class="preview-dot" aria-hidden="true"></span><strong id="previewTitle">Preview</strong></div><button type="button" id="closePreview" aria-label="Close preview">✕</button></div><p class="preview-message" id="previewMessage">Some games may prevent embedded previews. Open the full game if it doesn't appear here.</p><iframe id="previewFrame" title="Game preview" loading="lazy" referrerpolicy="no-referrer" allow="fullscreen" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups" ></iframe><div class="preview-footer"><span>Best experienced full screen</span><a id="previewOpen" class="button button-primary" href="#" target="_blank" rel="noopener noreferrer">Open game ↗</a></div></dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>

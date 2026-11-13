@@ -25,7 +25,7 @@ FRONT_FILES = [
     "sw.js", "offline-return.js", "favicon.png", "favicon.svg",
     "apple-touch-icon.png",
 ]
-FRONT_DIRS = ["icons", "simant", "play"]
+FRONT_DIRS = ["icons", "simant", "play", "community"]
 EXCLUDE_DIRS = {".git", ".github", "node_modules", "tests", "docs", "__pycache__", "test-results", "art_pipeline", "scripts", "tools", "Agents", "plan", "design"}
 EXCLUDE_FILES = {".DS_Store", ".gitignore", ".nojekyll", "README.md", "package.json", "package-lock.json", "playwright.config.js", "pyproject.toml"}
 EXCLUDE_SUFFIXES = {".md", ".py", ".ps1", ".bat", ".cmd", ".log", ".map", ".lock"}

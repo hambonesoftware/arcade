@@ -1,0 +1,30 @@
+name: Community feature checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/anonymous-community-hub]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  community-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Arcade and community tests
+        run: npm test
+      - name: Validate community static syntax
+        run: |
+          node --check community/app.js
+          node --check community/config.js
+          node --check community-api/src/worker.js
+          node --check community-api/src/admin-page.js
+          python -m py_compile scripts/package_offline_games.py
