@@ -42,7 +42,10 @@ async function api(path, options = {}) {
     throw new Error('Cannot reach the community service. Check your connection and try again.');
   }
   const data = await response.json().catch(() => ({}));
-  if (response.status === 401) resetIdentity();
+  if (response.status === 401 && guest) {
+    resetIdentity();
+    if ((options.method || 'GET') === 'GET') return api(path, options);
+  }
   if (!response.ok) throw new Error(data.error || 'The server could not complete your request.');
   if (data.guestToken) remember(data.guestToken);
   return data;
