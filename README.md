@@ -55,6 +55,12 @@ The GitHub Pages build checks out every game repository, packages its working we
 
 `tests/offline-browser.test.mjs` runs against the `_site` build on localhost with a mobile-sized Chromium viewport. It verifies real package caching, opening Colony offline, reloading the launcher offline, detecting a newer version, updating atomically, removing cached files and retaining local data.
 
+## Community Hub (staged)
+
+The Community feature lives at [Community](https://hambonesoftware.github.io/arcade/community/) once the new shell is published. Visitors can propose game ideas, support approved suggestions, vote in curated official polls without accounts, report inappropriate ideas, and view the build roadmap. The owner moderates suggestions and creates polls through a separate protected admin dashboard.
+
+**Deployment status:** The Community frontend and API code are implemented in the repository, but active submissions and voting require an independently configured Cloudflare Worker, D1 database, Turnstile site key and secret, and Cloudflare Access for owner moderation. Until those are configured, the website intentionally displays a setup message rather than simulated vote counts. See [community-api/README.md](community-api/README.md) for the exact deployment steps and security requirements.
+
 ## Website features
 
 - Responsive custom-illustrated homepage built with plain HTML, CSS, and JavaScript.
