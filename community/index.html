@@ -92,6 +92,7 @@
       <label>Genre <select name="genre" required><option>Arcade</option><option>Racing</option><option>Strategy</option><option>Platformer</option><option>Simulation</option><option>Physics</option><option>Worlds</option><option>Other</option></select></label>
       <label>Describe the gameplay <textarea name="description" minlength="15" maxlength="800" rows="5" placeholder="How do you play? What's the fun part?" required></textarea></label>
       <label>Nickname (optional) <input name="nickname" maxlength="32" placeholder="Anonymous"></label>
+      <p class="muted">Quick human verification:</p><div id="formTurnstileBox"></div>
       <p id="formFeedback" class="feedback" role="status" aria-live="polite"></p>
       <div class="dialog-actions"><button class="button button-primary" type="submit">Send for review</button><button class="button button-ghost" type="button" id="suggestCancel">Cancel</button></div>
     </form>
