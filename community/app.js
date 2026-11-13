@@ -3,7 +3,7 @@
 const $ = id => document.getElementById(id);
 const API = String(window.HAMBONE_COMMUNITY_API || '').replace(/\/+$/, '');
 const GUEST_KEY = 'hambone-community-guest-v1';
-const state = { connected: false, turnstileId: null, siteKey: '', poll: null };
+const state = { connected: false, turnstileId: null, formTurnstileId: null, siteKey: '', poll: null };
 let guest = '';
 try { guest = localStorage.getItem(GUEST_KEY) || ''; } catch { /* local storage may be blocked */ }
 
@@ -47,24 +47,25 @@ async function api(path, options = {}) {
   if (data.guestToken) remember(data.guestToken);
   return data;
 }
-function humanToken() {
-  if (!window.turnstile || state.turnstileId === null) {
+function humanToken(widgetId) {
+  if (!window.turnstile || widgetId === null) {
     throw new Error('Verification is unavailable. Try reloading while online.');
   }
-  const token = window.turnstile.getResponse(state.turnstileId);
+  const token = window.turnstile.getResponse(widgetId);
   if (!token) {
-    $('verificationPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!$('suggestDialog').open) $('verificationPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
     throw new Error('Please finish the quick human check before participating.');
   }
   return token;
 }
 async function write(path, body) {
-  const turnstileToken = humanToken();
+  const widgetId = path === 'ideas' ? state.formTurnstileId : state.turnstileId;
+  const turnstileToken = humanToken(widgetId);
   try {
     return await api(path, { method: 'POST', body: { ...body, turnstileToken } });
   } finally {
-    if (window.turnstile && state.turnstileId !== null) {
-      window.turnstile.reset(state.turnstileId);
+    if (window.turnstile && widgetId !== null) {
+      window.turnstile.reset(widgetId);
     }
   }
 }
@@ -180,7 +181,15 @@ async function loadRoadmap() {
     list.append(card);
   }
 }
-function openForm() { $('formFeedback').textContent = ''; $('suggestDialog').showModal(); }
+function openForm() {
+  $('formFeedback').textContent = '';
+  $('suggestDialog').showModal();
+  if (window.turnstile && state.siteKey && state.formTurnstileId === null) {
+    state.formTurnstileId = window.turnstile.render('#formTurnstileBox', {
+      sitekey: state.siteKey, theme: 'dark', action: 'community'
+    });
+  }
+}
 function closeForm() { $('suggestDialog').close(); }
 $('suggestOpen').addEventListener('click', openForm);
 $('suggestClose').addEventListener('click', closeForm);
