@@ -250,6 +250,23 @@ async function supportIdea(request, env, id) {
   }
   return json(request, env, { ok: true, supported: body.support, ...guestResult(visitor) });
 }
+async function reportIdea(request, env, ideaId) {
+  const body = await readBody(request);
+  if (!['spam', 'inappropriate', 'off-topic'].includes(body.reason)) {
+    fail(400, 'Choose a valid report reason.');
+  }
+  await verifyChallenge(body, env);
+  await rateLimit(request, env, 'report', 15);
+  const idea = await env.DB.prepare("SELECT id FROM ideas WHERE id = ? AND status = 'approved'")
+    .bind(ideaId).first();
+  if (!idea) fail(404, 'Idea not found.');
+  const visitor = await ensureVisitor(request, env);
+  await env.DB.prepare(
+    'INSERT OR IGNORE INTO idea_reports (idea_id, visitor_id, reason) VALUES (?, ?, ?)'
+  ).bind(ideaId, visitor.id, body.reason).run();
+  return json(request, env, { ok: true, ...guestResult(visitor) });
+}
+
 async function castVote(request, env, pollId) {
   const body = await readBody(request);
   if (typeof body.optionId !== 'string' || !/^[a-f0-9-]{36}$/.test(body.optionId)) {
@@ -271,15 +288,16 @@ async function castVote(request, env, pollId) {
 }
 
 async function adminOverview(request, env) {
-  const [ideas, approved, polls, roadmap] = await Promise.all([
+  const [ideas, approved, polls, roadmap, reports] = await Promise.all([
     env.DB.prepare("SELECT id, title, description, genre, nickname, created_at FROM ideas WHERE status = 'pending' ORDER BY created_at LIMIT 100").all(),
     env.DB.prepare("SELECT id, title, genre FROM ideas WHERE status = 'approved' ORDER BY created_at DESC LIMIT 200").all(),
     env.DB.prepare('SELECT id, title, status, starts_at, ends_at FROM polls ORDER BY created_at DESC LIMIT 30').all(),
-    env.DB.prepare('SELECT id, title, summary, status, release_url FROM roadmap ORDER BY updated_at DESC LIMIT 40').all()
+    env.DB.prepare('SELECT id, title, summary, status, release_url FROM roadmap ORDER BY updated_at DESC LIMIT 40').all(),
+    env.DB.prepare("SELECT r.idea_id, i.title, COUNT(*) AS reports FROM idea_reports r JOIN ideas i ON i.id = r.idea_id WHERE r.status = 'open' GROUP BY r.idea_id, i.title ORDER BY reports DESC LIMIT 100").all()
   ]);
   return json(request, env, {
     pending: ideas.results || [], approved: approved.results || [],
-    polls: polls.results || [], roadmap: roadmap.results || []
+    polls: polls.results || [], roadmap: roadmap.results || [], reports: reports.results || []
   });
 }
 async function moderateIdea(request, env, actor, id) {
@@ -291,6 +309,13 @@ async function moderateIdea(request, env, actor, id) {
   await audit(env, actor, 'idea.' + body.status, id);
   return json(request, env, { ok: true });
 }
+async function dismissReports(request, env, actor, ideaId) {
+  await env.DB.prepare("UPDATE idea_reports SET status = 'dismissed' WHERE idea_id = ?")
+    .bind(ideaId).run();
+  await audit(env, actor, 'reports.dismissed', ideaId);
+  return json(request, env, { ok: true });
+}
+
 async function createPoll(request, env, actor) {
   const body = await readBody(request);
   const poll = validatePollSetup(body);
@@ -375,6 +400,8 @@ async function handle(request, env, ctx) {
     if (path === '/api/admin/roadmap' && request.method === 'POST') return saveRoadmap(request, env, actor);
     const mod = path.match(/^\/api\/admin\/ideas\/([a-f0-9-]{36})\/status$/);
     if (mod && request.method === 'POST') return moderateIdea(request, env, actor, mod[1]);
+    const dismiss = path.match(/^\/api\/admin\/reports\/([a-f0-9-]{36})\/dismiss$/);
+    if (dismiss && request.method === 'POST') return dismissReports(request, env, actor, dismiss[1]);
     const close = path.match(/^\/api\/admin\/polls\/([a-f0-9-]{36})\/close$/);
     if (close && request.method === 'POST') return closePoll(request, env, actor, close[1]);
     fail(404, 'Not found.');
@@ -385,6 +412,8 @@ async function handle(request, env, ctx) {
   if (path === '/api/roadmap' && request.method === 'GET') return listRoadmap(request, env);
   const support = path.match(/^\/api\/ideas\/([a-f0-9-]{36})\/support$/);
   if (support && request.method === 'POST') return supportIdea(request, env, support[1]);
+  const report = path.match(/^\/api\/ideas\/([a-f0-9-]{36})\/report$/);
+  if (report && request.method === 'POST') return reportIdea(request, env, report[1]);
   const vote = path.match(/^\/api\/polls\/([a-f0-9-]{36})\/vote$/);
   if (vote && request.method === 'POST') return castVote(request, env, vote[1]);
   fail(404, 'Not found.');
