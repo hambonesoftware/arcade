@@ -355,7 +355,7 @@ async function handle(request, env, ctx) {
   }
   if (path === '/api/config' && request.method === 'GET') {
     return json(request, env, {
-      enabled: Boolean(env.DB && env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET && env.RATE_SALT),
+      enabled: Boolean(env.DB && env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET && env.TURNSTILE_HOSTNAME && env.ADMIN_EMAIL && env.RATE_SALT && env.RATE_SALT.length >= 24),
       siteKey: env.TURNSTILE_SITE_KEY || ''
     });
   }
