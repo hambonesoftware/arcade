@@ -8,6 +8,25 @@
  */
 const PROJECTS = [
   {
+    "id": "critterrescue",
+    "repo": "arcade",
+    "url": "https://hambonesoftware.github.io/arcade/games/critter-rescue/",
+    "sourcePath": "/tree/main/critter-rescue",
+    "title": "Critter Rescue",
+    "category": "Strategy",
+    "type": "Woodland rescue puzzle",
+    "description": "Guide a flock of tiny woodland creatures home. Draw twig bridges, dig tunnels, soften landings and redirect the flock through handcrafted forest puzzles.",
+    "emoji": "🐭",
+    "sideEmoji": "🍃",
+    "colors": [
+      "#789c65",
+      "#3e6658",
+      "#f5dba0"
+    ],
+    "playable": true,
+    "featured": true
+  },
+  {
     "id": "willowbend",
     "repo": "willowbend",
     "title": "Willowbend",
