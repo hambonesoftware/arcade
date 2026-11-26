@@ -31,7 +31,7 @@ try{
   const r=await page.locator('#world').boundingBox();const s=Math.min(r.width/1440,r.height/720),ox=r.x+(r.width-1440*s)/2,oy=r.y+(r.height-720*s)/2;
   const x1=ox+45.5*12*s,x2=ox+62.5*12*s,y=oy+35.5*12*s;
   // Touch emulation still accepts desktop pointer input; test native tap on touch layouts.
-  if(touch){await page.touchscreen.tap(x1,y);assert.equal(await page.locator('[data-tool="bridge"] .count').textContent(),'23 left');await page.locator('#undo').click();}
+  if(touch){const session=await page.context().newCDPSession(page);const points=[{x:x1,y,id:1},{x:x1+32,y:y-30,id:2}];await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:points});await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x1-10,y:y+5,id:1},{x:x1+42,y:y-35,id:2}]});await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await session.detach();assert.equal(await page.locator('[data-tool="bridge"] .count').textContent(),'24 left',name+' pinch does not place tools');await page.locator('#fit').click();await page.touchscreen.tap(x1,y);assert.equal(await page.locator('[data-tool="bridge"] .count').textContent(),'23 left');await page.locator('#undo').click();}
   await page.mouse.move(x1,y);await page.mouse.down();await page.mouse.move(x2,y,{steps:20});await page.mouse.up();
   assert.equal(await page.locator('[data-tool="bridge"] .count').textContent(),'6 left',name+' bridge consumed correct budget');
   await page.locator('#undo').click();assert.equal(await page.locator('[data-tool="bridge"] .count').textContent(),'24 left');
