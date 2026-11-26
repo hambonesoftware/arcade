@@ -130,7 +130,7 @@ jobs:
           node --check _site/offline-return.js
           python -m json.tool _site/game-packages.json >/dev/null
           du -sh _site
-          test "$(python -c 'import json; print(len(json.load(open("_site/game-packages.json"))["games"]))')" = 19
+          test "$(python -c 'import json; print(len(json.load(open("_site/game-packages.json"))["games"]))')" = 20
 
       - name: Install headless Chromium for offline mobile checks
         run: |
