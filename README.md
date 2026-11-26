@@ -8,6 +8,7 @@ Only games with published browser entry points are listed. Developer tools, musi
 
 | Game | Direct play URL |
 | --- | --- |
+| Critter Rescue | https://hambonesoftware.github.io/arcade/games/critter-rescue/ |
 | Willowbend | https://hambonesoftware.github.io/willowbend/ |
 | Trash Panda Heist | https://hambonesoftware.github.io/trash-panda-heist/ |
 | Trash Rac: Back Alley Rumble | https://hambonesoftware.github.io/trash-rac-unity/ |
@@ -34,7 +35,7 @@ Garage Gauntlet, Trash Rac and Stony Creek Explorer: Unity are Unity WebGL expor
 
 ## Downloadable offline PWA game library
 
-All 19 playable launch entries are built under the Arcade's own `/arcade/games/` path (or `/arcade/simant/` for Colony). They share **16 actual downloaded packages**. The three `rcCars` racing titles share one asset pack, and the two REDLINE modes share one. This avoids duplicate data and ensures games remain controlled by the Arcade service worker.
+All 20 playable launch entries are built under the Arcade's own `/arcade/games/` path (or `/arcade/simant/` for Colony). They share **17 actual downloaded packages**. The three `rcCars` racing titles share one asset pack, and the two REDLINE modes share one. This avoids duplicate data and ensures games remain controlled by the Arcade service worker.
 
 A separate generated `game-packages.json` contains every static file and a content-derived package version. The service worker `sw.js` provides:
 
