@@ -10,12 +10,12 @@ const PROJECTS = [
   {
     "id": "critterrescue",
     "repo": "arcade",
-    "url": "https://hambonesoftware.github.io/arcade/games/critter-rescue/",
+    "url": "https://hambonesoftware.github.io/arcade/games/critter-rescue/pocket/",
     "sourcePath": "/tree/main/critter-rescue",
-    "title": "Critter Rescue",
+    "title": "Critter Rescue: Pocket Puzzles",
     "category": "Strategy",
-    "type": "Woodland rescue puzzle",
-    "description": "Guide a flock of tiny woodland creatures home. Draw twig bridges, dig tunnels, soften landings and redirect the flock through handcrafted forest puzzles.",
+    "type": "Mechanical rescue puzzles",
+    "description": "Cut ropes, charge springboards and release counterweights to guide a handful of adorable explorers home in compact physics puzzles.",
     "emoji": "🐭",
     "sideEmoji": "🍃",
     "colors": [
