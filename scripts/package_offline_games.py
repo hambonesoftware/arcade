@@ -194,7 +194,7 @@ def prepare() -> None:
 
 
 SPECS = {
-    "critterrescue": (None, "games/critter-rescue/", "games/critter-rescue/index.html"),
+    "critterrescue": (None, "games/critter-rescue/", "games/critter-rescue/pocket/index.html"),
     "garage": ("garage-pages", "games/garage-gauntlet/", "games/garage-gauntlet/index.html"),
     "trashrac": ("trash-rac-pages", "games/trash-rac-unity/", "games/trash-rac-unity/index.html"),
     "stonyunity": ("stony-creek-pages", "games/stony-creek-unity/", "games/stony-creek-unity/index.html"),
@@ -214,7 +214,7 @@ SPECS = {
 }
 
 GAME_ENTRIES = {
-    "critterrescue": ("critterrescue", "games/critter-rescue/index.html"),
+    "critterrescue": ("critterrescue", "games/critter-rescue/pocket/index.html"),
     "willowbend": ("willowbend", "games/willowbend/index.html"),
     "trashpanda": ("trashpanda", "games/trash-panda-heist/index.html"),
     "trashrac": ("trashrac", "games/trash-rac-unity/index.html"),

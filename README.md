@@ -8,7 +8,7 @@ Only games with published browser entry points are listed. Developer tools, musi
 
 | Game | Direct play URL |
 | --- | --- |
-| Critter Rescue | https://hambonesoftware.github.io/arcade/games/critter-rescue/ |
+| Critter Rescue: Pocket Puzzles | https://hambonesoftware.github.io/arcade/games/critter-rescue/pocket/ |
 | Willowbend | https://hambonesoftware.github.io/willowbend/ |
 | Trash Panda Heist | https://hambonesoftware.github.io/trash-panda-heist/ |
 | Trash Rac: Back Alley Rumble | https://hambonesoftware.github.io/trash-rac-unity/ |
