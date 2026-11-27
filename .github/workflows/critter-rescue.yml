@@ -25,10 +25,14 @@ jobs:
           npx playwright install --with-deps chromium --only-shell
       - name: Test actual game in five viewport sizes
         run: node tests/critter-rescue-browser.mjs
+      - name: Test Pocket Puzzles direct touch mechanics
+        run: node tests/critter-rescue-pocket-browser.mjs
       - name: Upload actual gameplay captures
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: critter-rescue-gameplay-screenshots
-          path: test-results/critter-rescue/
+          path: |
+            test-results/critter-rescue/
+            test-results/critter-rescue-pocket/
           if-no-files-found: warn
