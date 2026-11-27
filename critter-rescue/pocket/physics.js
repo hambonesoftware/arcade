@@ -2,7 +2,7 @@
 export const W=400,H=600,DT=1/120,R=13;
 export const levels=[
  {name:'The swinging bridge',world:'Clover Creek',hint:'Swipe through the rope to lower the bridge, then open the nest.',kind:'bridge',start:{x:52,y:207},home:{x:341,y:382},floor:[[12,238,112,22],[273,395,115,22]],pivot:{x:124,y:238},length:210,angle:-1.12,target:.78,rope:{a:{x:251,y:75}},count:3},
- {name:'The springboard',world:'Fernwater Falls',hint:'Drag the spring lever down to charge it. Aim the dotted arc at the upper trail.',kind:'spring',start:{x:49,y:355},home:{x:343,y:274},floor:[[12,386,139,24],[273,287,115,24]],spring:{x:131,y:386},count:3},
+ {name:'The springboard',world:'Fernwater Falls',hint:'Drag the spring lever upward to charge it. Aim the dotted arc at the upper trail.',kind:'spring',start:{x:49,y:355},home:{x:343,y:274},floor:[[12,386,139,24],[273,287,115,24]],spring:{x:131,y:386},count:3},
  {name:'The acorn lift',world:'Oak Workshop',hint:'Pull the brass pin, then open the nest. The loaded lift will rise to the upper trail.',kind:'lift',start:{x:48,y:389},home:{x:345,y:225},floor:[[12,420,115,22],[273,238,115,22]],lift:{x:200,y:420,top:238,width:146},count:4}
 ];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
